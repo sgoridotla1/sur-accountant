@@ -8,7 +8,8 @@ The SUR accounting service monitors messages in SUR’s private chats and update
 [x] Setup Telegram Bot
 
 **AI**
-[ ] Setup Langchain (and connect to gpt or smth)
+[x] Setup Langchain (and connect to gpt or smth)
+[ ] Add tool to differentiate noise from data
 
 **Google Sheets**
 [ ] Setup Google Sheets API
