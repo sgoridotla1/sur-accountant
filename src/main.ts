@@ -5,6 +5,7 @@ import "dotenv/config";
 import TelegramClient from "./telegram";
 import Agent from "./agent";
 import Storage from "./storage";
+import { formatTelegramDate } from "./utils/time";
 
 const app = express();
 const port = 3000;
@@ -18,28 +19,34 @@ app.listen(port, () => {
 
   const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
   const agent = new Agent(process.env.GPT_API_KEY as string);
-  const storage = new Storage();
+  // const storage = new Storage();
 
   bot.onMessage(async (msg) => {
+    console.log(msg);
     try {
       const fileMeta = await bot.getFileMeta(msg);
 
       if (!fileMeta) return;
-
-      // Don't need it for now.
-      // const path = await storage.saveFileFromUrl(
-      //   fileMeta.fileUrl,
-      //   fileMeta.file,
-      // );
 
       const res = await fetch(fileMeta.fileUrl);
       const arrayBuffer = await res.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const base64 = buffer.toString("base64");
 
-      const reply = await agent.readTextFromImageBuffer(base64);
+      const dateFormatted = formatTelegramDate(msg.date);
+      const ocrResult = await agent.readTextFromImageBuffer(base64, {
+        date: dateFormatted,
+      });
 
-      console.log(reply.structuredResponse);
+      console.log(ocrResult);
+      const replyText = ocrResult.transactions
+        .map(
+          (row) =>
+            `${row.date} - ${row.type} - ${row.category} - ${row.amount}`,
+        )
+        .join("\n");
+
+      bot.replyToMessage(msg.chat.id, msg.message_id, replyText);
 
       // console.log(path);
     } catch {}

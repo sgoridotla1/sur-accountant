@@ -1,6 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { createAgent, HumanMessage, tool } from "langchain";
 import z from "zod";
+import { accountingSystemPrompt } from "./prompts";
 
 const accountingDataResponseFormat = z.object({
   transactions: z.array(
@@ -13,6 +14,8 @@ const accountingDataResponseFormat = z.object({
   ),
 });
 
+type AccountingResponse = z.infer<typeof accountingDataResponseFormat>;
+
 class Agent {
   agent: ReturnType<typeof createAgent>;
 
@@ -24,12 +27,8 @@ class Agent {
       maxTokens: 1000,
     });
 
-    const systemPrompt = `
-    You are an expert accounting data extraction assistant. You extract data from varous inputs like text or images. Respond with data only.
-    `;
-
     this.agent = createAgent({
-      systemPrompt,
+      systemPrompt: accountingSystemPrompt,
       model,
       responseFormat: accountingDataResponseFormat,
     });
@@ -48,12 +47,15 @@ class Agent {
       .then((reply) => reply.structuredResponse);
   }
 
-  async readTextFromImageBuffer(base64: string) {
+  async readTextFromImageBuffer(
+    base64: string,
+    meta: { date: string },
+  ): Promise<AccountingResponse> {
     const message = new HumanMessage({
       content: [
         {
           type: "text",
-          text: "Extract all visible content from the image. I need only total.",
+          text: `Today is ${meta.date}. Extract all visible content from the image. I need only total.`,
         },
         {
           type: "image_url",
@@ -64,9 +66,11 @@ class Agent {
       ],
     });
 
-    return await this.agent.invoke({
-      messages: [message],
-    });
+    return await this.agent
+      .invoke({
+        messages: [message],
+      })
+      .then((r) => r.structuredResponse as AccountingResponse);
   }
 }
 

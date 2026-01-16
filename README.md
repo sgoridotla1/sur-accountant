@@ -6,10 +6,12 @@ The SUR accounting service monitors messages in SUR’s private chats and update
 
 **Tg Bot**
 [x] Setup Telegram Bot
+[x] Reply to message with AI response
+[ ] Listen to message reactions
 
 **AI**
 [x] Setup Langchain (and connect to gpt or smth)
-[ ] Add tool to differentiate noise from data
+[x] Read data from image
 
 **Google Sheets**
 [ ] Setup Google Sheets API

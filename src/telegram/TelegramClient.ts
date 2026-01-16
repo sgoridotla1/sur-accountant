@@ -35,11 +35,15 @@ class TelegramClient {
     return { fileUrl, file };
   }
 
-  // getMessage() {
-  //   this.bot.on("message", (msg) => {
-  //     console.log(msg);
-  //   });
-  // }
+  async replyToMessage(
+    chatId: TelegramBotApi.ChatId,
+    messageId: number,
+    text: string,
+  ) {
+    this.bot.sendMessage(chatId, text, {
+      reply_to_message_id: messageId,
+    });
+  }
 }
 
 export default TelegramClient;
