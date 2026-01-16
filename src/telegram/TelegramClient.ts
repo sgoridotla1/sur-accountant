@@ -12,11 +12,21 @@ class TelegramClient {
 
   constructor(token: string) {
     this.token = token;
-    this.bot = new TelegramBotApi(token, { polling: true });
+    this.bot = new TelegramBotApi(token, {
+      polling: {
+        params: {
+          allowed_updates: ["message", "message_reaction"],
+        },
+      },
+    });
   }
 
   onMessage(handler: (msg: TelegramBotApi.Message) => void) {
     this.bot.on("message", handler);
+  }
+
+  onReaction(handler: (msg: TelegramBotApi.Message) => void) {
+    this.bot.on("message_reaction" as any, handler);
   }
 
   async getMessageType(msg: TelegramBotApi.Message) {}

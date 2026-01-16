@@ -10,16 +10,16 @@ import { formatTelegramDate } from "./utils/time";
 const app = express();
 const port = 3000;
 
+const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
+const agent = new Agent(process.env.GPT_API_KEY as string);
+// const storage = new Storage();
+
 app.get("/ping", (req, res) => {
   res.status(200).json({ message: "pong" });
 });
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-
-  const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
-  const agent = new Agent(process.env.GPT_API_KEY as string);
-  // const storage = new Storage();
 
   bot.onMessage(async (msg) => {
     console.log(msg);
@@ -39,17 +39,18 @@ app.listen(port, () => {
       });
 
       console.log(ocrResult);
-      const replyText = ocrResult.transactions
-        .map(
-          (row) =>
-            `${row.date} - ${row.type} - ${row.category} - ${row.amount}`,
-        )
-        .join("\n");
+      const replyText = JSON.stringify(ocrResult);
 
       bot.replyToMessage(msg.chat.id, msg.message_id, replyText);
 
       // console.log(path);
     } catch {}
+  });
+
+  bot.onReaction(async (msg) => {
+    console.log("reaction", msg);
+
+    bot.replyToMessage(msg.chat.id, msg.message_id, "puk 💩");
   });
 
   // bot.on("message", async (msg) => {
