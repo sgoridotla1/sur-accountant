@@ -1,39 +1,22 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { createAgent, tool } from "langchain";
+import { createAgent, HumanMessage, tool } from "langchain";
 import z from "zod";
 
 const accountingDataResponseFormat = z.object({
-  trnasactions: z.array(
+  transactions: z.array(
     z.object({
       date: z.string(),
       type: z.enum(["income", "expense"]),
       category: z.string(),
       amount: z.number(),
-    })
+    }),
   ),
 });
+
 class Agent {
   agent: ReturnType<typeof createAgent>;
 
   constructor(apiKey: string) {
-    const accountingDataParser = tool(
-      ({ query, today }) =>
-        `Parse accounting data from ${query}. If any date specified use for all data, otherwise fallback to ${today}`,
-      {
-        name: "accounting-data-parser",
-        schema: z.object({
-          query: z
-            .string()
-            .describe("A query to parse and get accounting data"),
-          today: z
-            .string()
-            .describe(
-              "Date when message was sent. Use as a fallback if date not found"
-            ),
-        }),
-      }
-    );
-
     const model = new ChatOpenAI({
       apiKey,
       model: "gpt-4.1-nano",
@@ -42,19 +25,12 @@ class Agent {
     });
 
     const systemPrompt = `
-You are an expert accounting data extraction assistant.
-Extract accounting transactions from text.
-
-Use accounting_data_parser to return:
-- type: income or expense
-- amount: number
-- category
-`;
+    You are an expert accounting data extraction assistant. You extract data from varous inputs like text or images. Respond with data only.
+    `;
 
     this.agent = createAgent({
       systemPrompt,
       model,
-      tools: [accountingDataParser],
       responseFormat: accountingDataResponseFormat,
     });
   }
@@ -65,11 +41,32 @@ Use accounting_data_parser to return:
         messages: [
           {
             role: "user",
-            content: `Today is ${date}. Get data from\n${message}`,
+            content: `${date}. Get accounting data from\n${message}`,
           },
         ],
       })
       .then((reply) => reply.structuredResponse);
+  }
+
+  async readTextFromImageBuffer(base64: string) {
+    const message = new HumanMessage({
+      content: [
+        {
+          type: "text",
+          text: "Extract all visible content from the image. I need only total.",
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:image/jpeg;base64,${base64}`,
+          },
+        },
+      ],
+    });
+
+    return await this.agent.invoke({
+      messages: [message],
+    });
   }
 }
 

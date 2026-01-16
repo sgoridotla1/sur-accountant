@@ -2,8 +2,9 @@ import express from "express";
 
 import "dotenv/config";
 
-import TelegramBot from "./telegram-bot";
+import TelegramClient from "./telegram";
 import Agent from "./agent";
+import Storage from "./storage";
 
 const app = express();
 const port = 3000;
@@ -15,25 +16,53 @@ app.get("/ping", (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 
-  const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN as string).init();
+  const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
   const agent = new Agent(process.env.GPT_API_KEY as string);
+  const storage = new Storage();
 
-  bot.on("message", async (msg) => {
-    console.log(msg);
-    const { date, text } = msg;
-    const dateFormatted = new Intl.DateTimeFormat("en-GB").format(date * 1000); // *1000 because telegram date is in seconds
-
-    if (!text) return;
-
+  bot.onMessage(async (msg) => {
     try {
-      const reply = await agent.getReply({
-        message: text,
-        date: dateFormatted,
-      });
-      console.log("===================\n");
-      console.log(reply);
-    } catch (err) {
-      console.error("Agent failed:", err);
-    }
+      const fileMeta = await bot.getFileMeta(msg);
+
+      if (!fileMeta) return;
+
+      // Don't need it for now.
+      // const path = await storage.saveFileFromUrl(
+      //   fileMeta.fileUrl,
+      //   fileMeta.file,
+      // );
+
+      const res = await fetch(fileMeta.fileUrl);
+      const arrayBuffer = await res.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64 = buffer.toString("base64");
+
+      const reply = await agent.readTextFromImageBuffer(base64);
+
+      console.log(reply.structuredResponse);
+
+      // console.log(path);
+    } catch {}
   });
+
+  // bot.on("message", async (msg) => {
+  //   console.log(msg);
+  //   const { date, text } = msg;
+  //   const dateFormatted = new Intl.DateTimeFormat("en-GB").format(date * 1000); // *1000 because telegram date is in seconds
+
+  //   getImage(msg);
+
+  //   if (!text) return;
+
+  //   try {
+  //     const reply = await agent.getReply({
+  //       message: text,
+  //       date: dateFormatted,
+  //     });
+  //     console.log("===================\n");
+  //     console.log(reply);
+  //   } catch (err) {
+  //     console.error("Agent failed:", err);
+  //   }
+  // });
 });
