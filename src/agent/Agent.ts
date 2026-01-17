@@ -1,76 +1,80 @@
-import { ChatOpenAI } from "@langchain/openai";
-import { createAgent, HumanMessage, tool } from "langchain";
-import z from "zod";
-import { accountingSystemPrompt } from "./prompts";
+import { ChatOpenAI, OpenAIChatModelId } from "@langchain/openai";
+import {
+  createAgent,
+  ResponseFormat,
+  BaseMessage,
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+} from "langchain";
+import z, { ZodTypeAny } from "zod";
 
-const accountingDataResponseFormat = z.object({
-  transactions: z.array(
-    z.object({
-      date: z.string(),
-      type: z.enum(["income", "expense"]),
-      category: z.string(),
-      amount: z.number(),
-    })
-  ),
-});
+type TextAgentArgs<T> = {
+  apiKey: string;
+  modelId: OpenAIChatModelId;
+  schema: T;
+  systemPrompt?: string;
+};
 
-export type AccountingResponse = z.infer<typeof accountingDataResponseFormat>;
+type Messages = Array<SystemMessage | HumanMessage | AIMessage>;
 
-class Agent {
+interface IAgent<T> {
+  parseText({ messages }: { messages: Messages }): Promise<T>;
+}
+
+class Agent<TSchema extends ZodTypeAny> {
   agent: ReturnType<typeof createAgent>;
-
-  constructor(apiKey: string) {
+  constructor({
+    apiKey,
+    modelId,
+    schema,
+    systemPrompt,
+  }: TextAgentArgs<TSchema>) {
     const model = new ChatOpenAI({
       apiKey,
-      model: "gpt-4.1-mini",
+      model: modelId,
       temperature: 0.1,
       maxTokens: 1000,
     });
 
     this.agent = createAgent({
-      systemPrompt: accountingSystemPrompt,
+      systemPrompt,
       model,
-      responseFormat: accountingDataResponseFormat,
+      responseFormat: schema as unknown as ResponseFormat,
     });
   }
 
-  async getReply({ message, date }: { message: string; date: string }) {
+  async invoke({ messages }: { messages: Messages }) {
     return await this.agent
       .invoke({
-        messages: [
+        messages,
+      })
+      .then((reply) => reply.structuredResponse as z.infer<TSchema>);
+  }
+
+  async parseImage({
+    messages,
+    base64,
+  }: {
+    messages?: Messages;
+    base64: string;
+  }) {
+    const withImage = [
+      ...(messages || []),
+      new HumanMessage({
+        content: [
           {
-            role: "user",
-            content: `${date}. Get accounting data from\n${message}`,
+            type: "image_url",
+            image_url: {
+              url: `data:image/jpeg;base64,${base64}`,
+            },
           },
         ],
-      })
-      .then((reply) => reply.structuredResponse);
-  }
+      }),
+    ];
 
-  async readTextFromImageBuffer(
-    base64: string,
-    meta: { date: string }
-  ): Promise<AccountingResponse> {
-    const message = new HumanMessage({
-      content: [
-        {
-          type: "text",
-          text: `Today is ${meta.date}. Extract all visible content from the image. I need only total.`,
-        },
-        {
-          type: "image_url",
-          image_url: {
-            url: `data:image/jpeg;base64,${base64}`,
-          },
-        },
-      ],
-    });
-
-    return await this.agent
-      .invoke({
-        messages: [message],
-      })
-      .then((r) => r.structuredResponse as AccountingResponse);
+    const result = await this.invoke({ messages: withImage });
+    return result;
   }
 }
 
