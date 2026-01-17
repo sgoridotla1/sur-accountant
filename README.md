@@ -22,5 +22,5 @@
 ### Google Sheets
 
 - [x] Setup Google Sheets API
-- [ ] Implement methods to write data into tables
+- [x] Implement methods to write data into tables
 - [ ] Add data validation & formatting
