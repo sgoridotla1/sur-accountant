@@ -16,5 +16,5 @@ The SUR accounting service monitors messages in SUR’s private chats and update
 [x] Read data from image
 
 **Google Sheets**
-[ ] Setup Google Sheets API
+[x] Setup Google Sheets API
 [ ] Implement methods to write data into tables
