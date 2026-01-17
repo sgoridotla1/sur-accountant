@@ -10,11 +10,11 @@ const accountingDataResponseFormat = z.object({
       type: z.enum(["income", "expense"]),
       category: z.string(),
       amount: z.number(),
-    }),
+    })
   ),
 });
 
-type AccountingResponse = z.infer<typeof accountingDataResponseFormat>;
+export type AccountingResponse = z.infer<typeof accountingDataResponseFormat>;
 
 class Agent {
   agent: ReturnType<typeof createAgent>;
@@ -22,7 +22,7 @@ class Agent {
   constructor(apiKey: string) {
     const model = new ChatOpenAI({
       apiKey,
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       temperature: 0.1,
       maxTokens: 1000,
     });
@@ -49,7 +49,7 @@ class Agent {
 
   async readTextFromImageBuffer(
     base64: string,
-    meta: { date: string },
+    meta: { date: string }
   ): Promise<AccountingResponse> {
     const message = new HumanMessage({
       content: [

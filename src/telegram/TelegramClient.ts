@@ -26,13 +26,14 @@ class TelegramClient {
   }
 
   onReaction(handler: (msg: TelegramBotApi.Message) => void) {
+    // TODO: extend event types and drop any
     this.bot.on("message_reaction" as any, handler);
   }
 
   async getMessageType(msg: TelegramBotApi.Message) {}
 
   async getFileMeta(
-    message: TelegramBotApi.Message,
+    message: TelegramBotApi.Message
   ): Promise<{ fileUrl: string; file: File } | null> {
     const image = message.photo?.pop();
     if (!image) return null;
@@ -48,11 +49,13 @@ class TelegramClient {
   async replyToMessage(
     chatId: TelegramBotApi.ChatId,
     messageId: number,
-    text: string,
-  ) {
-    this.bot.sendMessage(chatId, text, {
+    text: string
+  ): Promise<TelegramBotApi.Message> {
+    const message = this.bot.sendMessage(chatId, text, {
       reply_to_message_id: messageId,
     });
+
+    return message;
   }
 }
 

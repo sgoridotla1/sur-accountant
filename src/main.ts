@@ -3,7 +3,7 @@ import express from "express";
 import "dotenv/config";
 
 import TelegramClient from "./telegram";
-import Agent from "./agent";
+import Agent, { type AccountingResponse } from "./agent";
 import { formatTelegramDate } from "./utils/time";
 import GoogleSheetsClient from "./google-sheets";
 
@@ -12,11 +12,14 @@ const port = 3000;
 
 const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID as string;
 
+// TODO: Use more sophisticated solution :)
+const dumpStorage = new Map<number, AccountingResponse>();
+
 async function main() {
   const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
   const agent = new Agent(process.env.GPT_API_KEY as string);
   const sheets = await GoogleSheetsClient.init(
-    process.env.PATH_TO_GOOGLE_KEYFILE as string,
+    process.env.PATH_TO_GOOGLE_KEYFILE as string
   );
 
   app.listen(port, () => {
@@ -41,27 +44,47 @@ async function main() {
         console.log(ocrResult);
         const replyText = JSON.stringify(ocrResult);
 
-        bot.replyToMessage(msg.chat.id, msg.message_id, replyText);
+        const replyMessage = await bot.replyToMessage(
+          msg.chat.id,
+          msg.message_id,
+          replyText
+        );
 
-        // console.log(path);
+        dumpStorage.set(replyMessage.message_id, ocrResult);
       } catch {}
     });
 
     bot.onReaction(async (msg) => {
-      console.log("reaction", msg);
-
       try {
-        const rows = await sheets.write(
-          GOOGLE_SHEET_ID,
-          "sur-accountant!A1:E",
-          [Date.now()],
-        );
+        console.log(msg);
+        const messageRelatedData = dumpStorage.get(msg.message_id);
 
-        console.log(rows);
+        console.log("Message related data", messageRelatedData);
+
+        if (messageRelatedData) {
+          const translationRows = messageRelatedData.transactions.map(
+            (transaction) => [...Object.values(transaction)]
+          );
+
+          const resultRows = await sheets.write(
+            GOOGLE_SHEET_ID,
+            "sur-accountant!A1:AA",
+            translationRows
+          );
+
+          console.log(resultRows);
+        }
+
+        // const rows = await sheets.write(
+        //   GOOGLE_SHEET_ID,
+        //   "sur-accountant!A1:E",
+        //   [Date.now()]
+        // );
+        // console.log(rows);
       } catch (err) {
         console.error(
           `Failed to perform an action on reaction to the message:${msg.message_id}`,
-          err,
+          err
         );
       }
       // bot.replyToMessage(msg.chat.id, msg.message_id, "puk 💩");

@@ -32,14 +32,14 @@ class GoogleSheetsClient {
   async write(
     spreadsheetId: string,
     range: string,
-    values: (string | number | boolean)[],
+    values: (string | number | boolean)[][]
   ) {
     const res = await this.sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [values],
+        values,
       },
     });
 
