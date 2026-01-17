@@ -1,20 +1,26 @@
 # Sur Accountant Service
 
-The SUR accounting service monitors messages in SUR’s private chats and updates the accounting data in Google Sheets accordingly.
+> Telegram-based accounting assistant that extracts data from images and stores it in Google Sheets.
 
 ## TODO
 
-**Tg Bot**
-[x] Setup Telegram Bot
-[x] Reply to message with AI response
-[x] Listen to message reactions
-[ ] Setup reply
-[ ] Perform an action on message related data (MVP: store OCR result in memory)
+### Telegram Bot
 
-**AI**
-[x] Setup Langchain (and connect to gpt or smth)
-[x] Read data from image
+- [x] Setup Telegram bot
+- [x] Reply to messages with AI response
+- [x] Listen to message reactions
+- [ ] Setup reaction-based replies
+- [ ] Perform actions on message-related data  
+       _MVP: store OCR result in memory_
 
-**Google Sheets**
-[x] Setup Google Sheets API
-[ ] Implement methods to write data into tables
+### AI
+
+- [x] Setup LangChain
+- [x] Connect to GPT
+- [x] Read data from images
+
+### Google Sheets
+
+- [x] Setup Google Sheets API
+- [ ] Implement methods to write data into tables
+- [ ] Add data validation & formatting

@@ -10,10 +10,14 @@ import GoogleSheetsClient from "./google-sheets";
 const app = express();
 const port = 3000;
 
+const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID as string;
+
 async function main() {
   const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
   const agent = new Agent(process.env.GPT_API_KEY as string);
-  const sheets = await GoogleSheetsClient.init();
+  const sheets = await GoogleSheetsClient.init(
+    process.env.PATH_TO_GOOGLE_KEYFILE as string,
+  );
 
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
@@ -46,10 +50,20 @@ async function main() {
     bot.onReaction(async (msg) => {
       console.log("reaction", msg);
 
-      const rows = await sheets.read(
-        "1Uj5gZ5slSUmVyYVAbV1NIicUVzxyf94d_MFoX9M2n_Q",
-      );
-      console.log(rows);
+      try {
+        const rows = await sheets.write(
+          GOOGLE_SHEET_ID,
+          "sur-accountant!A1:E",
+          [Date.now()],
+        );
+
+        console.log(rows);
+      } catch (err) {
+        console.error(
+          `Failed to perform an action on reaction to the message:${msg.message_id}`,
+          err,
+        );
+      }
       // bot.replyToMessage(msg.chat.id, msg.message_id, "puk 💩");
     });
   });
