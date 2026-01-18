@@ -44,7 +44,6 @@ async function main() {
         let parseResult: TAccountingResponse | null = null;
 
         if (fileMeta) {
-          console.log("Hi!!!!");
           parseResult = await accountingService.parseImage({
             fileMeta,
           });

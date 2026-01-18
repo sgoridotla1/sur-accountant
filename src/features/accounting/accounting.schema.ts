@@ -1,15 +1,15 @@
 import z from "zod";
 
-const incomeTransactionSchema = z.object({
-  date: z.string(),
-  type: z.literal("income"),
-  category: z.enum(["card", "cash", "other"]),
-  amount: z.number(),
-});
+// const incomeTransactionSchema = z.object({
+//   date: z.string(),
+//   type: z.literal("income"),
+//   category: z.enum(["card", "cash", "other"]),
+//   amount: z.number(),
+// });
 
 const expenseTransactionSchema = z.object({
   date: z.string().regex(/\d{4}-\d{2}-\d{2}/),
-  type: z.literal("expense"),
+  type: z.literal(["expense", "income"]),
   category: z.enum([
     "Оренда",
     "Закупка",
@@ -18,6 +18,8 @@ const expenseTransactionSchema = z.object({
     "Зарплата",
     "Прибирання",
     "Інше",
+    "Картка",
+    "Готівка",
   ]),
   amount: z.number(),
 });
