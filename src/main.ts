@@ -12,6 +12,7 @@ import {
   TAccountingResponse,
   accountingResponseSchema,
 } from "./features/accounting";
+import { prettifyTransactions } from "./features/accounting/accounting.view";
 
 const app = express();
 const port = 3000;
@@ -54,7 +55,7 @@ async function main() {
         }
 
         console.log(parseResult);
-        const replyText = JSON.stringify(parseResult);
+        const replyText = parseResult ? prettifyTransactions(parseResult) : "";
 
         const replyMessage = await bot.replyToMessage(
           msg.chat.id,

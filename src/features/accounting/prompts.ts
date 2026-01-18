@@ -99,13 +99,13 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
   - Amount must be a number.
 
 ──────────────── TYPE RULES ────────────────
-- Default type is "income".
+- Default type is "expense".
 - If the line is under a section header such as:
   "Витрати:", "Витрата:", "Expenses:"
   then type = "expense" for all following lines until the section ends.
 - Also treat lines containing keywords as:
+  - income: "дохід", "income", "картка", "готівка", "приват", "моно"
   - expense: "витрата", "витрати", "expense"
-  - income: "дохід", "income"
 
 ──────────────── CATEGORY RULES ────────────────
 - Category is the remaining text after removing:
@@ -117,6 +117,9 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
 - If category becomes empty:
   - income → "income"
   - expense → "expense"
+- If contains words like  "Гот" or "готівка", put "Готівка" "картка",  "приват", "моно" put "Картка"
+- If contains words like Сільпо, okwine, оквайн, новус, novus, тс, тс+ put "Закупка"
+- If unsure about category put "Інше" (other)
 
 ──────────────── NOISE HANDLING ────────────────
 - Ignore empty lines, emojis, separators, and comments.
