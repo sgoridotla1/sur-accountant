@@ -25,7 +25,7 @@ async function main() {
   const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
   const agent = new Agent({
     apiKey: process.env.GPT_API_KEY as string,
-    modelId: "gpt-4.1",
+    modelId: "gpt-4.1-mini",
     schema: accountingResponseSchema,
   });
 

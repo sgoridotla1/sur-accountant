@@ -14,18 +14,25 @@ type TAgentArgs<T> = {
   modelId: OpenAIChatModelId;
   schema: T;
   systemPrompt?: string;
+  maxTokens?: number;
 };
 
 type Messages = Array<SystemMessage | HumanMessage | AIMessage>;
 
 class Agent<TSchema extends ZodTypeAny = ZodTypeAny> {
   agent: ReturnType<typeof createAgent>;
-  constructor({ apiKey, modelId, schema, systemPrompt }: TAgentArgs<TSchema>) {
+  constructor({
+    apiKey,
+    modelId,
+    schema,
+    systemPrompt,
+    maxTokens = 1000,
+  }: TAgentArgs<TSchema>) {
     const model = new ChatOpenAI({
       apiKey,
       model: modelId,
       temperature: 0.1,
-      maxTokens: 1000,
+      maxTokens,
     });
 
     this.agent = createAgent({

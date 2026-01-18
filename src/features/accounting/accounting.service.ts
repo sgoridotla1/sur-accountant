@@ -21,8 +21,6 @@ export class AccountingService {
     const buffer = Buffer.from(arrayBuffer);
     const base64 = buffer.toString("base64");
 
-    console.log(base64);
-
     const ocrResult = await this.agent.invoke({
       messages: [
         new SystemMessage(imageParserPrompt({ date: today() })),
