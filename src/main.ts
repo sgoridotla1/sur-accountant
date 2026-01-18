@@ -18,6 +18,7 @@ import {
   prettyOnSaveFailure,
   prettyOnSaveSuccess,
 } from "./features/accounting/accounting.view";
+import z from "zod";
 
 const app = express();
 const port = 3000;
@@ -33,6 +34,15 @@ async function main() {
     apiKey: process.env.GPT_API_KEY as string,
     modelId: "gpt-4.1-mini",
     schema: accountingResponseSchema,
+  });
+
+  const noiseAgent = new Agent({
+    apiKey: process.env.GPT_API_KEY as string,
+    modelId: "gpt-5.1-chat-latest",
+    schema: z.object({ isNoise: z.boolean() }),
+    temperature: 1,
+    systemPrompt:
+      "You are noise detection bot. You will receive a message. You should find you if message is noize (conversation etc.) or does it contain useful accounting data. TRUE if just noise or FALSE if useful",
   });
 
   const sheets = await GoogleSheetsClient.init(
@@ -54,6 +64,13 @@ async function main() {
             fileMeta,
           });
         } else if (msg.text) {
+          const { isNoise } = await noiseAgent.invoke({
+            messages: [new HumanMessage(msg.text ?? "")],
+          });
+
+          console.log(isNoise);
+          if (isNoise) return;
+
           parseResult = await accountingService.parseText({
             message: msg.text,
           });
@@ -80,7 +97,11 @@ async function main() {
         console.log("Message related data", messageRelatedData);
 
         // @ts-ignore TODO: Extend msg interface with reaction feature
-        const isRejected = msg.new_reaction[0].emoji === "💩";
+        const isRejected = msg.new_reaction[0]?.emoji === "💩";
+        // @ts-ignore TODO: Extend msg interface with reaction feature
+        const reactionsCount = msg.new_reaction.length;
+
+        if (reactionsCount > 1) return;
 
         // TODO: Create rejected error type
         if (isRejected) {
@@ -98,7 +119,7 @@ async function main() {
             "sur-accountant!A1:AA",
             translationRows,
           );
-
+          await bot.sendMessage(msg.chat.id, prettyOnSaveSuccess());
           console.log(resultRows);
         }
       } catch (err) {

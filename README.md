@@ -31,3 +31,8 @@
 - [x] Setup Google Sheets API
 - [x] Implement methods to write data into tables
 - [ ] Add data validation & formatting
+
+### Misc
+
+- [ ] Add Dockerfile and deploy
+- [ ] Cleanup main.ts

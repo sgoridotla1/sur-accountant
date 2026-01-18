@@ -15,6 +15,7 @@ type TAgentArgs<T> = {
   schema: T;
   systemPrompt?: string;
   maxTokens?: number;
+  temperature?: number;
 };
 
 type Messages = Array<SystemMessage | HumanMessage | AIMessage>;
@@ -27,11 +28,12 @@ class Agent<TSchema extends ZodTypeAny = ZodTypeAny> {
     schema,
     systemPrompt,
     maxTokens = 1000,
+    temperature = 0.1,
   }: TAgentArgs<TSchema>) {
     const model = new ChatOpenAI({
       apiKey,
       model: modelId,
-      temperature: 0.1,
+      temperature,
       maxTokens,
     });
 
