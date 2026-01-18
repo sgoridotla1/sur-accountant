@@ -12,3 +12,9 @@ export function prettifyTransactions(data: TAccountingResponse): string {
 
   return `🫵 Зберегти результат?\n\n${lines.join("\n")}`;
 }
+
+export const prettyOnSaveSuccess = () => "Успішно 🫡";
+export const prettyOnSaveFailure = () =>
+  "Упс, не сьогодні... Щось пішло не так\ncc @sgdtl";
+export const prettyOnRejected = () =>
+  "Ну сфоткай краще чи напиши зрозуміліше лол, тоді все вийде 🥴";

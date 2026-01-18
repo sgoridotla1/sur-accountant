@@ -55,9 +55,18 @@ class TelegramClient {
     messageId: number,
     text: string,
   ): Promise<TelegramBotApi.Message> {
-    const message = this.bot.sendMessage(chatId, text, {
+    const message = await this.bot.sendMessage(chatId, text, {
       reply_to_message_id: messageId,
     });
+
+    return message;
+  }
+
+  async sendMessage(
+    chatId: TelegramBotApi.ChatId,
+    text: string,
+  ): Promise<TelegramBotApi.Message> {
+    const message = await this.bot.sendMessage(chatId, text);
 
     return message;
   }

@@ -10,21 +10,21 @@
 - [x] Reply to messages with AI response
 - [x] Listen to message reactions
 - [ ] Setup reaction-based replies
-
   - [x] Save on reaction
-  - [ ] Action on specific reaction
+  - [x] Action on specific reaction
+  - [ ] Move flow inside accounting feature
 
 - [x] Perform actions on message-related data  
        _MVP: store OCR result in memory_
   - [ ] Add actual persistent storage
-- [ ] Add templates for pretty responses
+- [x] Add templates for pretty responses
 
 ### AI
 
 - [x] Setup LangChain
 - [x] Connect to GPT
 - [x] Read data from images
-- [ ] Use different models for text and images
+<!-- - [ ] Use different models for text and images -->
 
 ### Google Sheets
 

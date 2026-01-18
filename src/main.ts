@@ -12,7 +12,12 @@ import {
   TAccountingResponse,
   accountingResponseSchema,
 } from "./features/accounting";
-import { prettifyTransactions } from "./features/accounting/accounting.view";
+import {
+  prettifyTransactions,
+  prettyOnRejected,
+  prettyOnSaveFailure,
+  prettyOnSaveSuccess,
+} from "./features/accounting/accounting.view";
 
 const app = express();
 const port = 3000;
@@ -74,6 +79,15 @@ async function main() {
 
         console.log("Message related data", messageRelatedData);
 
+        // @ts-ignore TODO: Extend msg interface with reaction feature
+        const isRejected = msg.new_reaction[0].emoji === "💩";
+
+        // TODO: Create rejected error type
+        if (isRejected) {
+          bot.sendMessage(msg.chat.id, prettyOnRejected());
+          return;
+        }
+
         if (messageRelatedData) {
           const translationRows = messageRelatedData.transactions.map(
             (transaction) => [...Object.values(transaction)],
@@ -92,6 +106,8 @@ async function main() {
           `Failed to perform an action on reaction to the message:${msg.message_id}`,
           err,
         );
+
+        await bot.sendMessage(msg.chat.id, prettyOnSaveFailure());
       }
       // bot.replyToMessage(msg.chat.id, msg.message_id, "puk 💩");
     });
