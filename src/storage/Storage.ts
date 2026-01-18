@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 
-import type { File } from "../telegram";
+import type { TFile } from "../telegram";
 
 class Storage {
   baseDir: string;
@@ -10,7 +10,7 @@ class Storage {
     this.baseDir = baseDir;
   }
 
-  async saveFileFromUrl(url: string, file: File) {
+  async saveFileFromUrl(url: string, file: TFile) {
     if (!file.file_path) throw new Error("No file_path specified!");
 
     const res = await fetch(url);

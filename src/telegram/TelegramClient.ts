@@ -4,7 +4,11 @@ import TelegramBotApi from "node-telegram-bot-api";
 // - read text messages
 // - read images
 
-export type File = TelegramBotApi.File;
+export type TFile = TelegramBotApi.File;
+export type TFileMeta = {
+  fileUrl: string;
+  file: TFile;
+};
 
 class TelegramClient {
   token: string;
@@ -33,8 +37,8 @@ class TelegramClient {
   async getMessageType(msg: TelegramBotApi.Message) {}
 
   async getFileMeta(
-    message: TelegramBotApi.Message
-  ): Promise<{ fileUrl: string; file: File } | null> {
+    message: TelegramBotApi.Message,
+  ): Promise<TFileMeta | null> {
     const image = message.photo?.pop();
     if (!image) return null;
 
@@ -49,7 +53,7 @@ class TelegramClient {
   async replyToMessage(
     chatId: TelegramBotApi.ChatId,
     messageId: number,
-    text: string
+    text: string,
   ): Promise<TelegramBotApi.Message> {
     const message = this.bot.sendMessage(chatId, text, {
       reply_to_message_id: messageId,

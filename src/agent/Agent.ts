@@ -9,7 +9,7 @@ import {
 } from "langchain";
 import z, { ZodTypeAny } from "zod";
 
-type TextAgentArgs<T> = {
+type TAgentArgs<T> = {
   apiKey: string;
   modelId: OpenAIChatModelId;
   schema: T;
@@ -18,18 +18,9 @@ type TextAgentArgs<T> = {
 
 type Messages = Array<SystemMessage | HumanMessage | AIMessage>;
 
-interface IAgent<T> {
-  parseText({ messages }: { messages: Messages }): Promise<T>;
-}
-
-class Agent<TSchema extends ZodTypeAny> {
+class Agent<TSchema extends ZodTypeAny = ZodTypeAny> {
   agent: ReturnType<typeof createAgent>;
-  constructor({
-    apiKey,
-    modelId,
-    schema,
-    systemPrompt,
-  }: TextAgentArgs<TSchema>) {
+  constructor({ apiKey, modelId, schema, systemPrompt }: TAgentArgs<TSchema>) {
     const model = new ChatOpenAI({
       apiKey,
       model: modelId,
@@ -50,31 +41,6 @@ class Agent<TSchema extends ZodTypeAny> {
         messages,
       })
       .then((reply) => reply.structuredResponse as z.infer<TSchema>);
-  }
-
-  async parseImage({
-    messages,
-    base64,
-  }: {
-    messages?: Messages;
-    base64: string;
-  }) {
-    const withImage = [
-      ...(messages || []),
-      new HumanMessage({
-        content: [
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:image/jpeg;base64,${base64}`,
-            },
-          },
-        ],
-      }),
-    ];
-
-    const result = await this.invoke({ messages: withImage });
-    return result;
   }
 }
 
