@@ -3,9 +3,9 @@ import { AIMessage, HumanMessage, SystemMessage } from "langchain";
 
 import "dotenv/config";
 
-import TelegramClient from "./telegram";
-import Agent from "./agent";
-import GoogleSheetsClient from "./google-sheets";
+import TelegramClient from "./clients/telegram";
+import Agent from "./clients/agent";
+import GoogleSheetsClient from "./clients/google-sheets";
 
 import {
   AccountingService,

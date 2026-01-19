@@ -1,5 +1,5 @@
-import Agent from "../../agent";
-import { TFileMeta } from "../../telegram";
+import Agent from "../../clients/agent";
+import { TFileMeta } from "../../clients/telegram";
 import {
   accountingResponseSchema,
   TAccountingResponse,
