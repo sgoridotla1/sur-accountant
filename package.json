@@ -8,7 +8,7 @@
   "main": "./src/main.ts",
   "scripts": {
     "start": "ts-node ./src/main.ts",
-    "build": "tsc",
+    "build": "NODE_ENV=production tsc",
     "dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
