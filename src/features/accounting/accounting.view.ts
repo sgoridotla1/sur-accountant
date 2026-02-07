@@ -10,11 +10,10 @@ export function prettifyTransactions(data: TAccountingResponse): string {
     return `${tx.date}  ${sign}${formatAmount(tx.amount)} грн   ${tx.category}`;
   });
 
-  return `🫵 Зберегти результат?\n\n${lines.join("\n")}`;
+  return `Зберегти результат?\n\n${lines.join("\n")}`;
 }
 
-export const prettyOnSaveSuccess = () => "Успішно 🫡";
+export const prettyOnSaveSuccess = () => "👍";
 export const prettyOnSaveFailure = () =>
   "Упс, не сьогодні... Щось пішло не так\ncc @sgdtl";
-export const prettyOnRejected = () =>
-  "Ну сфоткай краще чи напиши зрозуміліше лол, тоді все вийде 🥴";
+export const prettyOnRejected = () => "🥴";
