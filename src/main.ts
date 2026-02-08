@@ -130,7 +130,6 @@ async function main() {
 
         await bot.sendMessage(msg.chat.id, prettyOnSaveFailure());
       }
-      // bot.replyToMessage(msg.chat.id, msg.message_id, "puk 💩");
     });
   });
 }
