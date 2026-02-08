@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   api:
-    image: ghcr.io/<YOUR_GITHUB_ORG>/<YOUR_REPO>:latest
+    image: ghcr.io/sgoridotla1/sur-accountant:latest
     container_name: api
     env_file:
       - .env
