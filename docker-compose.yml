@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  api:
+    image: ghcr.io/<YOUR_GITHUB_ORG>/<YOUR_REPO>:latest
+    container_name: api
+    env_file:
+      - .env
+    ports:
+      - "3000:3000" # change if needed
+    restart: unless-stopped
