@@ -1,52 +1,37 @@
-name: Deploy to EC2
+name: Build Image
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          node-version: 24
-          cache: npm
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install deps
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Prepare SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Upload dist + manifests
-        run: |
-          rsync -az --delete \
-            dist package.json package-lock.json \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/sur-accountant/
-
-      - name: Install prod deps + restart with PM2
-        run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            cd /home/ubuntu/sur-accountant
-
-            # install production deps only
-            npm ci --omit=dev
-
-            # start or restart pm2 process
-            pm2 start dist/main.js --name sur-accountant --update-env || true
-            pm2 restart sur-accountant --update-env
-
-            pm2 save
-          EOF
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
