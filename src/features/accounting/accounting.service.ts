@@ -76,9 +76,16 @@ export class AccountingService {
 
         if (fileMeta) {
           parseResult = await this.parseImage({ fileMeta });
+          if (!parseResult?.transactions?.length) {
+            this.logger.info({ chatId: msg.chat.id }, "Image has no accounting data, skipping");
+            return;
+          }
         } else if (msg.text) {
           parseResult = await this.textChain.invoke(msg.text);
-          if (!parseResult) return;
+          if (!parseResult) {
+            this.logger.info({ chatId: msg.chat.id }, "Text message is noise, skipping");
+            return;
+          }
         }
 
         this.logger.info({ count: parseResult?.transactions?.length }, "Parsed transactions");

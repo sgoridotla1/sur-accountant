@@ -48,6 +48,12 @@ DO NOT extract line items, VAT, subtotals, or payment details.
   (e.g., "Bсього", "Pазом", "Do cплати").
 - Ignore decorative text, separators, and logos.
 
+──────────────── NON-RECEIPT IMAGES ────────────────
+- If the image is NOT a receipt or does NOT contain any accounting data,
+  return: { "transactions": [] }
+- Do NOT hallucinate or invent transactions from non-receipt images
+  (photos, memes, screenshots, documents, etc.).
+
 ──────────────── OUTPUT ────────────────
 Return STRICT JSON ONLY (no markdown, no extra text):
 
