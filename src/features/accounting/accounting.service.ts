@@ -121,6 +121,7 @@ export class AccountingService {
       try {
         this.logger.debug({ messageId: msg.message_id, chatId: msg.chat.id }, "Reaction received");
         const stored = this.storage.get(msg.message_id);
+        this.storage.delete(msg.message_id);
 
         this.logger.debug({ messageId: msg.message_id, hasStoredData: !!stored }, "Stored message lookup");
 
