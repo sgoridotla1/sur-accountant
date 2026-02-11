@@ -1,36 +1,31 @@
-# Sur Accountant Service
+# Sur Accountant
 
-> Telegram-based accounting assistant that extracts data from images and stores it in Google Sheets.
+Telegram bot for a small business accounting. Extracts transactions from receipt photos and text messages using AI, saves to Google Sheets on emoji confirmation.
 
-## TODO
+## Setup
 
-### Telegram Bot
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
 
-- [x] Setup Telegram bot
-- [x] Reply to messages with AI response
-- [x] Listen to message reactions
-- [x] Setup reaction-based replies
-  - [x] Save on reaction
-  - [x] Action on specific reaction
-  - [ ] Move flow inside accounting feature
+| Variable | Description |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token |
+| `GPT_API_KEY` | OpenAI API key |
+| `GPT_MODEL_PARSE` | Model for transaction parsing (default: `gpt-5.2`) |
+| `GPT_MODEL_NOISE` | Model for noise detection (default: `gpt-5.2`) |
+| `PATH_TO_GOOGLE_KEYFILE` | Path to Google service account JSON |
+| `GOOGLE_SHEET_ID` | Target spreadsheet ID |
+| `LOG_LEVEL` | `debug` / `info` / `warn` / `error` (default: `info`) |
 
-- [x] Perform actions on message-related data
-- [ ] Add actual persistent storage
-- [x] Add templates for pretty responses
+Google service account credentials go into `credentials/`.
 
-### AI
+## Deploy
 
-- [x] Setup LangChain
-- [x] Connect to GPT
-- [x] Read data from images
+Docker + GitHub Actions to EC2. Push to `main` triggers build and deploy.
 
-### Google Sheets
-
-- [x] Setup Google Sheets API
-- [x] Implement methods to write data into tables
-
-### Misc
-
-- [x] Add Dockerfile and deploy
-- [ ] Cleanup main.ts
-- [ ] Add logs
+```bash
+docker compose up -d
+```
