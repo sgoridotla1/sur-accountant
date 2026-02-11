@@ -19,6 +19,7 @@ import {
 } from "./accounting.view";
 import { imageParserPrompt, textParsePrompt } from "./prompts";
 import { today } from "../../utils/time";
+import { logger } from "../../utils/logger";
 
 type TStoredMessage = {
   data: TAccountingResponse;
@@ -40,6 +41,7 @@ export class AccountingService {
   private sheets: GoogleSheetsClient;
   private sheetId: string;
   private storage = new Map<number, TStoredMessage>();
+  private logger = logger.child({ service: "accounting" });
 
   constructor(config: TAccountingServiceConfig) {
     this.bot = config.bot;
@@ -62,13 +64,13 @@ export class AccountingService {
             messages: [new HumanMessage(msg.text ?? "")],
           });
 
-          console.log(isNoise);
+          this.logger.debug({ isNoise }, "Noise detection result");
           if (isNoise) return;
 
           parseResult = await this.parseText({ message: msg.text });
         }
 
-        console.log(parseResult);
+        this.logger.info({ count: parseResult?.transactions?.length }, "Parsed transactions");
         const replyText = parseResult ? prettifyTransactions(parseResult) : "";
 
         const replyMessage = await this.bot.replyToMessage(
@@ -83,15 +85,17 @@ export class AccountingService {
             data: parseResult,
             threadId: msg.message_thread_id,
           });
-      } catch {}
+      } catch (err) {
+        this.logger.error({ err, chatId: msg.chat.id }, "Failed to handle message");
+      }
     });
 
     this.bot.onReaction(async (msg) => {
       try {
-        console.log(msg);
+        this.logger.debug({ messageId: msg.message_id, chatId: msg.chat.id }, "Reaction received");
         const stored = this.storage.get(msg.message_id);
 
-        console.log("Message related data", stored);
+        this.logger.debug({ messageId: msg.message_id, hasStoredData: !!stored }, "Stored message lookup");
 
         const emoji =
           msg.new_reaction[0]?.type === "emoji"
@@ -127,13 +131,10 @@ export class AccountingService {
             prettyOnSaveSuccess(),
             threadOpts,
           );
-          console.log(resultRows);
+          this.logger.info({ messageId: msg.message_id }, "Transactions saved to sheets");
         }
       } catch (err) {
-        console.error(
-          `Failed to perform an action on reaction to the message:${msg.message_id}`,
-          err,
-        );
+        this.logger.error({ messageId: msg.message_id, err }, "Failed to handle reaction");
 
         await this.bot.sendMessage(msg.chat.id, prettyOnSaveFailure());
       }

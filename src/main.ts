@@ -8,6 +8,7 @@ import Agent from "./clients/agent";
 import GoogleSheetsClient from "./clients/google-sheets";
 
 import { AccountingService, accountingResponseSchema } from "./features/accounting";
+import { logger } from "./utils/logger";
 
 const app = express();
 const port = 3000;
@@ -44,7 +45,7 @@ async function main() {
   accountingService.run();
 
   app.listen(port, "0.0.0.0", () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    logger.info({ port }, "Server started");
   });
 }
 
