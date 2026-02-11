@@ -6,6 +6,8 @@ services:
     container_name: api
     env_file:
       - .env
+    volumes:
+      - ./credentials:/app/credentials:ro
     ports:
       - "3000:3000" # change if needed
     restart: unless-stopped
