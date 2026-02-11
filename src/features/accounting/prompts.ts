@@ -1,6 +1,36 @@
+import fs from "fs";
+import path from "path";
+
+type TExample = {
+  input: string;
+  output: { transactions: { date: string; type: string; category: string; amount: number }[] };
+};
+
 type TPromptOptions = {
   date: string;
+  examples?: TExample[];
 };
+
+function loadExamples(filename: string): TExample[] {
+  const filePath = path.join(process.cwd(), "data", filename);
+  const content = fs.readFileSync(filePath, "utf-8");
+  return content
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+}
+
+function formatExamples(examples: TExample[]): string {
+  return examples
+    .map(
+      (ex) =>
+        `Input: ${ex.input}\nOutput: ${JSON.stringify(ex.output)}`
+    )
+    .join("\n\n");
+}
+
+export const textExamples = loadExamples("text-examples.jsonl");
+export const imageExamples = loadExamples("image-examples.jsonl");
 
 export const imageParserPrompt = (options: TPromptOptions) => `
 You are an OCR extraction engine for Ukrainian receipts.
@@ -48,11 +78,25 @@ DO NOT extract line items, VAT, subtotals, or payment details.
   (e.g., "Bсього", "Pазом", "Do cплати").
 - Ignore decorative text, separators, and logos.
 
+──────────────── CATEGORY RULES ────────────────
+- Determine category from the merchant/store name visible on the receipt.
+- Use EXACTLY one of these values:
+  - "Закупка"    — groceries, food, supplies (Сільпо, Novus, okwine, ТС, ТС+, АТБ, Фора, etc.)
+  - "Таксі"      — taxi, ride services (Uber, Bolt, Uklon, etc.)
+  - "Обладнання" — equipment, tools, hardware (Епіцентр, Comfy, etc.)
+  - "Зарплата"   — salary, wages, payroll
+  - "Прибирання" — cleaning services
+  - "Інше"       — anything that doesn't fit above
+- Default type is "expense".
+
 ──────────────── NON-RECEIPT IMAGES ────────────────
 - If the image is NOT a receipt or does NOT contain any accounting data,
   return: { "transactions": [] }
 - Do NOT hallucinate or invent transactions from non-receipt images
   (photos, memes, screenshots, documents, etc.).
+
+──────────────── EXAMPLES ────────────────
+${formatExamples(imageExamples)}
 
 ──────────────── OUTPUT ────────────────
 Return STRICT JSON ONLY (no markdown, no extra text):
@@ -68,9 +112,7 @@ Return STRICT JSON ONLY (no markdown, no extra text):
   ]
 }
 
-- raw_total_text: the exact text snippet used to determine the total.
-- confidence: a value from 0.0 to 1.0 indicating certainty.
-- If total cannot be confidently identified, set total_uah = null.
+- If no valid transactions are found, return: { "transactions": [] }
 
 `;
 
@@ -131,6 +173,9 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
 - Ignore empty lines, emojis, separators, and comments.
 - Ignore lines that do NOT contain a numeric amount.
 - Do NOT invent or merge transactions.
+
+──────────────── EXAMPLES ────────────────
+${formatExamples(textExamples)}
 
 ──────────────── OUTPUT ────────────────
 Return STRICT JSON ONLY (no markdown, no extra text):

@@ -1,0 +1,7 @@
+{"input": "Сільпо 450 картка", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Закупка", "amount": 450}]}}
+{"input": "готівка 1200", "output": {"transactions": [{"date": "2026-02-11", "type": "income", "category": "Готівка", "amount": 1200}]}}
+{"input": "Убер 250", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Таксі", "amount": 250}]}}
+{"input": "моно 3500", "output": {"transactions": [{"date": "2026-02-11", "type": "income", "category": "Картка", "amount": 3500}]}}
+{"input": "28.12\nновус 320\nприбирання 500\nоквайн 890", "output": {"transactions": [{"date": "2025-12-28", "type": "expense", "category": "Закупка", "amount": 320}, {"date": "2025-12-28", "type": "expense", "category": "Прибирання", "amount": 500}, {"date": "2025-12-28", "type": "expense", "category": "Закупка", "amount": 890}]}}
+{"input": "зарплата 15000", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Зарплата", "amount": 15000}]}}
+{"input": "купили блендер 2800", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Обладнання", "amount": 2800}]}}

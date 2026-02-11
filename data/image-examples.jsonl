@@ -1,0 +1,9 @@
+{"input": "Receipt from Сільпо, total 450.00 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Закупка", "amount": 450}]}}
+{"input": "Receipt from Novus / Новус, total 320.50 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Закупка", "amount": 320.5}]}}
+{"input": "Receipt from okwine / оквайн, total 890 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Закупка", "amount": 890}]}}
+{"input": "Receipt from ТС / ТС+, total 215 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Закупка", "amount": 215}]}}
+{"input": "Bolt ride receipt, total 89 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Таксі", "amount": 89}]}}
+{"input": "Uber receipt, total 145 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Таксі", "amount": 145}]}}
+{"input": "Receipt from Епіцентр, drill purchase, total 2800 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Обладнання", "amount": 2800}]}}
+{"input": "Cleaning service receipt, total 500 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Прибирання", "amount": 500}]}}
+{"input": "Unknown store receipt, total 150 UAH", "output": {"transactions": [{"date": "2026-02-11", "type": "expense", "category": "Інше", "amount": 150}]}}

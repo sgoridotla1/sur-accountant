@@ -21,8 +21,9 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# bring compiled output only
+# bring compiled output and data files
 COPY --from=build /app/dist ./dist
+COPY data ./data
 
 # change if your app uses a different port
 EXPOSE 3000
