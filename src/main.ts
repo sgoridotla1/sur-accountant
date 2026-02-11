@@ -8,6 +8,7 @@ import Agent from "./clients/agent";
 import GoogleSheetsClient from "./clients/google-sheets";
 
 import { AccountingService, accountingResponseSchema } from "./features/accounting";
+import { noiseDetectionPrompt } from "./features/accounting/prompts";
 import { logger } from "./utils/logger";
 
 const app = express();
@@ -26,8 +27,7 @@ async function main() {
     modelId: process.env.GPT_MODEL_NOISE ?? "gpt-5.2",
     schema: z.object({ isNoise: z.boolean() }),
     temperature: 1,
-    systemPrompt:
-      "You are noise detection bot. You will receive a message. You should find you if message is noize (conversation etc.) or does it contain useful accounting data. TRUE if just noise or FALSE if useful",
+    systemPrompt: noiseDetectionPrompt,
   });
 
   const sheets = await GoogleSheetsClient.init(

@@ -40,6 +40,36 @@ export function buildFewShotMessages(
 export const textExamples = loadExamples("text-examples.jsonl");
 export const imageExamples = loadExamples("image-examples.jsonl");
 
+export const noiseDetectionPrompt = `You are a binary classifier for a Ukrainian small-business accounting Telegram bot.
+
+TASK: Decide whether a message contains at least one financial transaction. Return isNoise = false if it does, isNoise = true otherwise.
+
+A TRANSACTION message contains BOTH:
+1. A monetary amount (number representing money spent or received)
+2. Context indicating a purchase, payment, income, or expense — such as a store name, category, or payment method
+
+Examples of TRANSACTION messages (isNoise = false):
+- "Сільпо 450 картка"
+- "готівка 1200"
+- "28.12\\nновус 320\\nприбирання 500"
+- "зарплата 15000"
+- "купили блендер 2800"
+- "Убер 250"
+
+Examples of NOISE messages (isNoise = true):
+- "Зустрінемося о 15:00" (time, not money)
+- "вул. Шевченка 23" (address)
+- "Зателефонуй 0501234567" (phone number)
+- "Замовлення #12345 підтверджено" (order ID, not a payment)
+- "Привіт, як справи?" (conversation)
+- "3 кг яблук" (quantity, not a monetary amount)
+- "Рейтинг 4.5 з 5" (rating)
+
+RULES:
+- Numbers alone do NOT make a transaction — they must represent money
+- Phone numbers, addresses, dates, times, order IDs, quantities, and ratings are NOT transactions
+- When uncertain, lean towards isNoise = false (let the parser decide)`;
+
 export const imageParserPrompt = (options: TPromptOptions) => `
 You are an OCR extraction engine for Ukrainian receipts.
 

@@ -19,7 +19,13 @@ import {
   APPROVE_REACTIONS,
   REJECT_REACTIONS,
 } from "./accounting.view";
-import { imageParserPrompt, textParsePrompt, buildFewShotMessages, textExamples, imageExamples } from "./prompts";
+import {
+  imageParserPrompt,
+  textParsePrompt,
+  buildFewShotMessages,
+  textExamples,
+  imageExamples,
+} from "./prompts";
 import { today } from "../../utils/time";
 import { logger } from "../../utils/logger";
 import { mayContainTransaction } from "./accounting.utils";
@@ -92,18 +98,27 @@ export class AccountingService {
         if (fileMeta) {
           parseResult = await this.parseImage({ fileMeta });
           if (!parseResult?.transactions?.length) {
-            this.logger.info({ chatId: msg.chat.id }, "Image has no accounting data, skipping");
+            this.logger.info(
+              { chatId: msg.chat.id },
+              "Image has no accounting data, skipping",
+            );
             return;
           }
         } else if (msg.text) {
           parseResult = await this.textChain.invoke(msg.text);
           if (!parseResult) {
-            this.logger.info({ chatId: msg.chat.id }, "Text message is noise, skipping");
+            this.logger.info(
+              { chatId: msg.chat.id },
+              "Text message is noise, skipping",
+            );
             return;
           }
         }
 
-        this.logger.info({ count: parseResult?.transactions?.length }, "Parsed transactions");
+        this.logger.info(
+          { count: parseResult?.transactions?.length },
+          "Parsed transactions",
+        );
         const replyText = parseResult ? prettifyTransactions(parseResult) : "";
 
         const replyMessage = await this.bot.replyToMessage(
@@ -119,17 +134,26 @@ export class AccountingService {
             threadId: msg.message_thread_id,
           });
       } catch (err) {
-        this.logger.error({ err, chatId: msg.chat.id }, "Failed to handle message");
+        this.logger.error(
+          { err, chatId: msg.chat.id },
+          "Failed to handle message",
+        );
       }
     });
 
     this.bot.onReaction(async (msg) => {
       try {
-        this.logger.debug({ messageId: msg.message_id, chatId: msg.chat.id }, "Reaction received");
+        this.logger.debug(
+          { messageId: msg.message_id, chatId: msg.chat.id },
+          "Reaction received",
+        );
         const stored = this.storage.get(msg.message_id);
         this.storage.delete(msg.message_id);
 
-        this.logger.debug({ messageId: msg.message_id, hasStoredData: !!stored }, "Stored message lookup");
+        this.logger.debug(
+          { messageId: msg.message_id, hasStoredData: !!stored },
+          "Stored message lookup",
+        );
 
         const emoji =
           msg.new_reaction[0]?.type === "emoji"
@@ -146,7 +170,11 @@ export class AccountingService {
         const threadOpts = { message_thread_id: stored?.threadId };
 
         if (isRejected) {
-          await this.bot.sendMessage(msg.chat.id, prettyOnRejected(), threadOpts);
+          await this.bot.sendMessage(
+            msg.chat.id,
+            prettyOnRejected(),
+            threadOpts,
+          );
           return;
         }
 
@@ -157,10 +185,16 @@ export class AccountingService {
             prettyOnSaveSuccess(),
             threadOpts,
           );
-          this.logger.info({ messageId: msg.message_id }, "Transactions saved to sheets");
+          this.logger.info(
+            { messageId: msg.message_id },
+            "Transactions saved to sheets",
+          );
         }
       } catch (err) {
-        this.logger.error({ messageId: msg.message_id, err }, "Failed to handle reaction");
+        this.logger.error(
+          { messageId: msg.message_id, err },
+          "Failed to handle reaction",
+        );
 
         await this.bot.sendMessage(msg.chat.id, prettyOnSaveFailure());
       }
@@ -198,27 +232,6 @@ export class AccountingService {
     return ocrResult;
   }
 
-  private async writeTransactions(transactions: TTransaction[]) {
-    const income = transactions.filter((t) => t.type === "income");
-    const expense = transactions.filter((t) => t.type === "expense");
-
-    const writes: Promise<unknown>[] = [];
-
-    if (income.length) {
-      const rows = income.map((t) => [t.date, t.category, t.amount]);
-      this.logger.debug({ count: income.length, table: this.tables.income }, "Writing income transactions");
-      writes.push(this.sheets.write(this.sheetId, this.tables.income, rows));
-    }
-
-    if (expense.length) {
-      const rows = expense.map((t) => [t.date, t.category, t.amount]);
-      this.logger.debug({ count: expense.length, table: this.tables.expense }, "Writing expense transactions");
-      writes.push(this.sheets.write(this.sheetId, this.tables.expense, rows));
-    }
-
-    await Promise.all(writes);
-  }
-
   private async parseText({ message }: { message: string }) {
     const textResult = await this.agent.invoke({
       messages: [
@@ -229,5 +242,32 @@ export class AccountingService {
     });
 
     return textResult;
+  }
+
+  private async writeTransactions(transactions: TTransaction[]) {
+    const income = transactions.filter((t) => t.type === "income");
+    const expense = transactions.filter((t) => t.type === "expense");
+
+    const writes: Promise<unknown>[] = [];
+
+    if (income.length) {
+      const rows = income.map((t) => [t.date, t.category, t.amount]);
+      this.logger.debug(
+        { count: income.length, table: this.tables.income },
+        "Writing income transactions",
+      );
+      writes.push(this.sheets.write(this.sheetId, this.tables.income, rows));
+    }
+
+    if (expense.length) {
+      const rows = expense.map((t) => [t.date, t.category, t.amount]);
+      this.logger.debug(
+        { count: expense.length, table: this.tables.expense },
+        "Writing expense transactions",
+      );
+      writes.push(this.sheets.write(this.sheetId, this.tables.expense, rows));
+    }
+
+    await Promise.all(writes);
   }
 }
