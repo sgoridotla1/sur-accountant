@@ -40,6 +40,10 @@ async function main() {
     noiseAgent,
     sheets,
     sheetId: process.env.GOOGLE_SHEET_ID as string,
+    tables: {
+      income: "Каса!A1:C",
+      expense: "Витрати!A1:C",
+    },
   });
 
   accountingService.run();

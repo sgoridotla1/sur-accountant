@@ -9,6 +9,7 @@ import GoogleSheetsClient from "../../clients/google-sheets";
 import {
   accountingResponseSchema,
   TAccountingResponse,
+  TTransaction,
 } from "./accounting.schema";
 import {
   prettifyTransactions,
@@ -27,12 +28,18 @@ type TStoredMessage = {
   threadId?: number;
 };
 
+type TTableConfig = {
+  income: string;
+  expense: string;
+};
+
 type TAccountingServiceConfig = {
   bot: TelegramClient;
   agent: Agent<typeof accountingResponseSchema>;
   noiseAgent: Agent<z.ZodObject<{ isNoise: z.ZodBoolean }>>;
   sheets: GoogleSheetsClient;
   sheetId: string;
+  tables: TTableConfig;
 };
 
 export class AccountingService {
@@ -41,6 +48,7 @@ export class AccountingService {
   private noiseAgent: Agent<z.ZodObject<{ isNoise: z.ZodBoolean }>>;
   private sheets: GoogleSheetsClient;
   private sheetId: string;
+  private tables: TTableConfig;
   private storage = new Map<number, TStoredMessage>();
   private logger = logger.child({ service: "accounting" });
   private textChain;
@@ -51,6 +59,7 @@ export class AccountingService {
     this.noiseAgent = config.noiseAgent;
     this.sheets = config.sheets;
     this.sheetId = config.sheetId;
+    this.tables = config.tables;
 
     const noiseFilter = RunnableLambda.from(async (text: string) => {
       const { isNoise } = await this.noiseAgent.invoke({
@@ -135,15 +144,7 @@ export class AccountingService {
         }
 
         if (stored) {
-          const translationRows = stored.data.transactions.map(
-            (transaction) => [...Object.values(transaction)],
-          );
-
-          const resultRows = await this.sheets.write(
-            this.sheetId,
-            "sur-accountant!A1:AA",
-            translationRows,
-          );
+          await this.writeTransactions(stored.data.transactions);
           await this.bot.sendMessage(
             msg.chat.id,
             prettyOnSaveSuccess(),
@@ -187,6 +188,27 @@ export class AccountingService {
     });
 
     return ocrResult;
+  }
+
+  private async writeTransactions(transactions: TTransaction[]) {
+    const income = transactions.filter((t) => t.type === "income");
+    const expense = transactions.filter((t) => t.type === "expense");
+
+    const writes: Promise<unknown>[] = [];
+
+    if (income.length) {
+      const rows = income.map((t) => [t.date, t.category, t.amount]);
+      this.logger.debug({ count: income.length, table: this.tables.income }, "Writing income transactions");
+      writes.push(this.sheets.write(this.sheetId, this.tables.income, rows));
+    }
+
+    if (expense.length) {
+      const rows = expense.map((t) => [t.date, t.category, t.amount]);
+      this.logger.debug({ count: expense.length, table: this.tables.expense }, "Writing expense transactions");
+      writes.push(this.sheets.write(this.sheetId, this.tables.expense, rows));
+    }
+
+    await Promise.all(writes);
   }
 
   private async parseText({ message }: { message: string }) {
