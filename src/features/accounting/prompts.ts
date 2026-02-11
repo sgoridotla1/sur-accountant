@@ -1,18 +1,26 @@
 import fs from "fs";
 import path from "path";
+import { AIMessage, HumanMessage } from "langchain";
 
-type TExample = {
+export type TExample = {
   input: string;
-  output: { transactions: { date: string; type: string; category: string; amount: number }[] };
+  output: {
+    transactions: {
+      date: string;
+      type: string;
+      category: string;
+      amount: number;
+    }[];
+  };
 };
 
 type TPromptOptions = {
   date: string;
-  examples?: TExample[];
 };
 
 function loadExamples(filename: string): TExample[] {
   const filePath = path.join(process.cwd(), "data", filename);
+  if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, "utf-8");
   return content
     .split("\n")
@@ -20,13 +28,13 @@ function loadExamples(filename: string): TExample[] {
     .map((line) => JSON.parse(line));
 }
 
-function formatExamples(examples: TExample[]): string {
-  return examples
-    .map(
-      (ex) =>
-        `Input: ${ex.input}\nOutput: ${JSON.stringify(ex.output)}`
-    )
-    .join("\n\n");
+export function buildFewShotMessages(
+  examples: TExample[],
+): Array<HumanMessage | AIMessage> {
+  return examples.flatMap((ex) => [
+    new HumanMessage(ex.input),
+    new AIMessage(JSON.stringify(ex.output)),
+  ]);
 }
 
 export const textExamples = loadExamples("text-examples.jsonl");
@@ -95,9 +103,6 @@ DO NOT extract line items, VAT, subtotals, or payment details.
 - Do NOT hallucinate or invent transactions from non-receipt images
   (photos, memes, screenshots, documents, etc.).
 
-──────────────── EXAMPLES ────────────────
-${formatExamples(imageExamples)}
-
 ──────────────── OUTPUT ────────────────
 Return STRICT JSON ONLY (no markdown, no extra text):
 
@@ -140,7 +145,7 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
 
 ──────────────── TRANSACTION RULES ────────────────
 - Each transaction must be extracted from a line that contains a number.
-- The FIRST number in the line is always the transaction amount.
+- Extract the number from the line which represents the transaction amount.
 - Amount rules:
   - Remove spaces used as thousand separators ("1 510" → 1510).
   - Convert comma decimals to dot decimals ("123,45" → 123.45).
@@ -173,9 +178,6 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
 - Ignore empty lines, emojis, separators, and comments.
 - Ignore lines that do NOT contain a numeric amount.
 - Do NOT invent or merge transactions.
-
-──────────────── EXAMPLES ────────────────
-${formatExamples(textExamples)}
 
 ──────────────── OUTPUT ────────────────
 Return STRICT JSON ONLY (no markdown, no extra text):

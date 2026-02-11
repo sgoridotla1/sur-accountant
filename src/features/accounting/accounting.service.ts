@@ -19,7 +19,7 @@ import {
   APPROVE_REACTIONS,
   REJECT_REACTIONS,
 } from "./accounting.view";
-import { imageParserPrompt, textParsePrompt } from "./prompts";
+import { imageParserPrompt, textParsePrompt, buildFewShotMessages, textExamples, imageExamples } from "./prompts";
 import { today } from "../../utils/time";
 import { logger } from "../../utils/logger";
 import { mayContainTransaction } from "./accounting.utils";
@@ -180,6 +180,7 @@ export class AccountingService {
     const ocrResult = await this.agent.invoke({
       messages: [
         new SystemMessage(imageParserPrompt({ date: today() })),
+        ...buildFewShotMessages(imageExamples),
         new HumanMessage("Parse data from this image"),
         new HumanMessage({
           content: [
@@ -222,7 +223,7 @@ export class AccountingService {
     const textResult = await this.agent.invoke({
       messages: [
         new SystemMessage(textParsePrompt({ date: today() })),
-        new HumanMessage("Parse data from this message"),
+        ...buildFewShotMessages(textExamples),
         new HumanMessage(message),
       ],
     });
