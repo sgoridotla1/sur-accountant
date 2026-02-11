@@ -22,6 +22,14 @@ npm run dev
 
 Google service account credentials go into `credentials/`.
 
+## Debug Mode
+
+Set `LOG_LEVEL=debug` in your `.env` file to enable verbose logging (noise detection results, reaction lookups, sheet writes, etc.):
+
+```bash
+LOG_LEVEL=debug npm run dev
+```
+
 ## Deploy
 
 Docker + GitHub Actions to EC2. Push to `main` triggers build and deploy.
