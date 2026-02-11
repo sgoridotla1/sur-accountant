@@ -22,6 +22,7 @@ import {
 import { imageParserPrompt, textParsePrompt } from "./prompts";
 import { today } from "../../utils/time";
 import { logger } from "../../utils/logger";
+import { mayContainTransaction } from "./accounting.utils";
 
 type TStoredMessage = {
   data: TAccountingResponse;
@@ -62,6 +63,11 @@ export class AccountingService {
     this.tables = config.tables;
 
     const noiseFilter = RunnableLambda.from(async (text: string) => {
+      if (!mayContainTransaction(text)) {
+        this.logger.debug("Message has no numbers, skipping");
+        return null;
+      }
+
       const { isNoise } = await this.noiseAgent.invoke({
         messages: [new HumanMessage(text)],
       });
