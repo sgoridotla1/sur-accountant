@@ -18,7 +18,10 @@ npm run dev
 | `GPT_MODEL_NOISE` | Model for noise detection (default: `gpt-5.2`) |
 | `PATH_TO_GOOGLE_KEYFILE` | Path to Google service account JSON |
 | `GOOGLE_SHEET_ID` | Target spreadsheet ID |
+| `SHEET_TABLE_INCOME` | Income sheet range (default: `Каса!A1:C`) |
+| `SHEET_TABLE_EXPENSE` | Expense sheet range (default: `Витрати!A1:C`) |
 | `LOG_LEVEL` | `debug` / `info` / `warn` / `error` (default: `info`) |
+| `ALLOWED_TOPIC_IDS` | Comma-separated Telegram topic IDs to listen to (empty = all) |
 
 Google service account credentials go into `credentials/`.
 

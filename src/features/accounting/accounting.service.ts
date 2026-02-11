@@ -47,6 +47,7 @@ type TAccountingServiceConfig = {
   sheets: GoogleSheetsClient;
   sheetId: string;
   tables: TTableConfig;
+  allowedTopics?: number[];
 };
 
 export class AccountingService {
@@ -56,6 +57,7 @@ export class AccountingService {
   private sheets: GoogleSheetsClient;
   private sheetId: string;
   private tables: TTableConfig;
+  private allowedTopics: Set<number> | null;
   private storage = new Map<number, TStoredMessage>();
   private logger = logger.child({ service: "accounting" });
   private textChain;
@@ -67,6 +69,9 @@ export class AccountingService {
     this.sheets = config.sheets;
     this.sheetId = config.sheetId;
     this.tables = config.tables;
+    this.allowedTopics = config.allowedTopics?.length
+      ? new Set(config.allowedTopics)
+      : null;
 
     const noiseFilter = RunnableLambda.from(async (text: string) => {
       if (!mayContainTransaction(text)) {
@@ -91,6 +96,15 @@ export class AccountingService {
 
   run() {
     this.bot.onMessage(async (msg) => {
+      this.logger.debug(
+        { chatId: msg.chat.id, topicId: msg.message_thread_id },
+        "Message received",
+      );
+
+      if (this.allowedTopics && !this.allowedTopics.has(msg.message_thread_id!)) {
+        return;
+      }
+
       try {
         const fileMeta = await this.bot.getFileMeta(msg);
         let parseResult: TAccountingResponse | null = null;

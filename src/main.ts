@@ -34,6 +34,11 @@ async function main() {
     process.env.PATH_TO_GOOGLE_KEYFILE as string,
   );
 
+  const allowedTopics = process.env.ALLOWED_TOPIC_IDS
+    ?.split(",")
+    .map(Number)
+    .filter(Boolean);
+
   const accountingService = new AccountingService({
     bot,
     agent,
@@ -41,9 +46,10 @@ async function main() {
     sheets,
     sheetId: process.env.GOOGLE_SHEET_ID as string,
     tables: {
-      income: "Каса!A1:C",
-      expense: "Витрати!A1:C",
+      income: process.env.SHEET_TABLE_INCOME as string,
+      expense: process.env.SHEET_TABLE_EXPENSE as string,
     },
+    allowedTopics,
   });
 
   accountingService.run();
