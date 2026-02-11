@@ -14,6 +14,8 @@ import {
   prettyOnRejected,
   prettyOnSaveFailure,
   prettyOnSaveSuccess,
+  APPROVE_REACTIONS,
+  REJECT_REACTIONS,
 } from "./accounting.view";
 import { imageParserPrompt, textParsePrompt } from "./prompts";
 import { today } from "../../utils/time";
@@ -91,12 +93,17 @@ export class AccountingService {
 
         console.log("Message related data", stored);
 
-        const isRejected =
-          msg.new_reaction[0]?.type === "emoji" &&
-          msg.new_reaction[0].emoji === "💩";
-        const reactionsCount = msg.new_reaction.length;
+        const emoji =
+          msg.new_reaction[0]?.type === "emoji"
+            ? msg.new_reaction[0].emoji
+            : null;
 
-        if (reactionsCount > 1) return;
+        if (!emoji) return;
+
+        const isApproved = APPROVE_REACTIONS.has(emoji);
+        const isRejected = REJECT_REACTIONS.has(emoji);
+
+        if (!isApproved && !isRejected) return;
 
         const threadOpts = { message_thread_id: stored?.threadId };
 
