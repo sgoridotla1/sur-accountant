@@ -26,7 +26,11 @@ const port = 3000;
 const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID as string;
 
 // TODO: Use more sophisticated solution :)
-const dumpStorage = new Map<number, TAccountingResponse>();
+type TStoredMessage = {
+  data: TAccountingResponse;
+  threadId?: number;
+};
+const dumpStorage = new Map<number, TStoredMessage>();
 
 async function main() {
   const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
@@ -83,34 +87,40 @@ async function main() {
           msg.chat.id,
           msg.message_id,
           replyText,
+          { message_thread_id: msg.message_thread_id },
         );
 
-        if (parseResult) dumpStorage.set(replyMessage.message_id, parseResult);
+        if (parseResult)
+          dumpStorage.set(replyMessage.message_id, {
+            data: parseResult,
+            threadId: msg.message_thread_id,
+          });
       } catch {}
     });
 
     bot.onReaction(async (msg) => {
       try {
         console.log(msg);
-        const messageRelatedData = dumpStorage.get(msg.message_id);
+        const stored = dumpStorage.get(msg.message_id);
 
-        console.log("Message related data", messageRelatedData);
+        console.log("Message related data", stored);
 
-        // @ts-ignore TODO: Extend msg interface with reaction feature
-        const isRejected = msg.new_reaction[0]?.emoji === "💩";
-        // @ts-ignore TODO: Extend msg interface with reaction feature
+        const isRejected =
+          msg.new_reaction[0]?.type === "emoji" &&
+          msg.new_reaction[0].emoji === "💩";
         const reactionsCount = msg.new_reaction.length;
 
         if (reactionsCount > 1) return;
 
-        // TODO: Create rejected error type
+        const threadOpts = { message_thread_id: stored?.threadId };
+
         if (isRejected) {
-          bot.sendMessage(msg.chat.id, prettyOnRejected());
+          await bot.sendMessage(msg.chat.id, prettyOnRejected(), threadOpts);
           return;
         }
 
-        if (messageRelatedData) {
-          const translationRows = messageRelatedData.transactions.map(
+        if (stored) {
+          const translationRows = stored.data.transactions.map(
             (transaction) => [...Object.values(transaction)],
           );
 
@@ -119,7 +129,11 @@ async function main() {
             "sur-accountant!A1:AA",
             translationRows,
           );
-          await bot.sendMessage(msg.chat.id, prettyOnSaveSuccess());
+          await bot.sendMessage(
+            msg.chat.id,
+            prettyOnSaveSuccess(),
+            threadOpts,
+          );
           console.log(resultRows);
         }
       } catch (err) {

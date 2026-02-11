@@ -1,9 +1,5 @@
 import TelegramBotApi from "node-telegram-bot-api";
 
-// This should be able to poll data from telegram channel:
-// - read text messages
-// - read images
-
 export type TFile = TelegramBotApi.File;
 export type TFileMeta = {
   fileUrl: string;
@@ -29,12 +25,11 @@ class TelegramClient {
     this.bot.on("message", handler);
   }
 
-  onReaction(handler: (msg: TelegramBotApi.Message) => void) {
-    // TODO: extend event types and drop any
-    this.bot.on("message_reaction" as any, handler);
+  onReaction(
+    handler: (msg: TelegramBotApi.MessageReactionUpdated) => void,
+  ) {
+    this.bot.on("message_reaction", handler);
   }
-
-  async getMessageType(msg: TelegramBotApi.Message) {}
 
   async getFileMeta(
     message: TelegramBotApi.Message,
@@ -54,9 +49,11 @@ class TelegramClient {
     chatId: TelegramBotApi.ChatId,
     messageId: number,
     text: string,
+    options?: { message_thread_id?: number },
   ): Promise<TelegramBotApi.Message> {
     const message = await this.bot.sendMessage(chatId, text, {
       reply_to_message_id: messageId,
+      message_thread_id: options?.message_thread_id,
     });
 
     return message;
@@ -65,8 +62,11 @@ class TelegramClient {
   async sendMessage(
     chatId: TelegramBotApi.ChatId,
     text: string,
+    options?: { message_thread_id?: number },
   ): Promise<TelegramBotApi.Message> {
-    const message = await this.bot.sendMessage(chatId, text);
+    const message = await this.bot.sendMessage(chatId, text, {
+      message_thread_id: options?.message_thread_id,
+    });
 
     return message;
   }
