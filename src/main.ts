@@ -17,13 +17,13 @@ async function main() {
   const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
   const agent = new Agent({
     apiKey: process.env.GPT_API_KEY as string,
-    modelId: "gpt-4.1-mini",
+    modelId: process.env.GPT_MODEL_PARSE ?? "gpt-5.2",
     schema: accountingResponseSchema,
   });
 
   const noiseAgent = new Agent({
     apiKey: process.env.GPT_API_KEY as string,
-    modelId: "gpt-5.1-chat-latest",
+    modelId: process.env.GPT_MODEL_NOISE ?? "gpt-5.2",
     schema: z.object({ isNoise: z.boolean() }),
     temperature: 1,
     systemPrompt:
