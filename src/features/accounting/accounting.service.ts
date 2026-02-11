@@ -1,4 +1,5 @@
 import { HumanMessage, SystemMessage } from "langchain";
+import { RunnableLambda } from "@langchain/core/runnables";
 import z from "zod";
 
 import Agent from "../../clients/agent";
@@ -42,6 +43,7 @@ export class AccountingService {
   private sheetId: string;
   private storage = new Map<number, TStoredMessage>();
   private logger = logger.child({ service: "accounting" });
+  private textChain;
 
   constructor(config: TAccountingServiceConfig) {
     this.bot = config.bot;
@@ -49,6 +51,21 @@ export class AccountingService {
     this.noiseAgent = config.noiseAgent;
     this.sheets = config.sheets;
     this.sheetId = config.sheetId;
+
+    const noiseFilter = RunnableLambda.from(async (text: string) => {
+      const { isNoise } = await this.noiseAgent.invoke({
+        messages: [new HumanMessage(text)],
+      });
+      this.logger.debug({ isNoise }, "Noise detection result");
+      return isNoise ? null : text;
+    });
+
+    const textParser = RunnableLambda.from(async (text: string | null) => {
+      if (!text) return null;
+      return this.parseText({ message: text });
+    });
+
+    this.textChain = noiseFilter.pipe(textParser);
   }
 
   run() {
@@ -60,14 +77,8 @@ export class AccountingService {
         if (fileMeta) {
           parseResult = await this.parseImage({ fileMeta });
         } else if (msg.text) {
-          const { isNoise } = await this.noiseAgent.invoke({
-            messages: [new HumanMessage(msg.text ?? "")],
-          });
-
-          this.logger.debug({ isNoise }, "Noise detection result");
-          if (isNoise) return;
-
-          parseResult = await this.parseText({ message: msg.text });
+          parseResult = await this.textChain.invoke(msg.text);
+          if (!parseResult) return;
         }
 
         this.logger.info({ count: parseResult?.transactions?.length }, "Parsed transactions");

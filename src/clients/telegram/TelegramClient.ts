@@ -6,6 +6,18 @@ export type TFileMeta = {
   file: TFile;
 };
 
+export type MessageReactionUpdated = {
+  chat: TelegramBotApi.Chat;
+  message_id: number;
+  date: number;
+  old_reaction: ReactionType[];
+  new_reaction: ReactionType[];
+};
+
+type ReactionType =
+  | { type: "emoji"; emoji: string }
+  | { type: "custom_emoji"; custom_emoji_id: string };
+
 class TelegramClient {
   token: string;
   bot: TelegramBotApi;
@@ -26,7 +38,7 @@ class TelegramClient {
   }
 
   onReaction(
-    handler: (msg: TelegramBotApi.MessageReactionUpdated) => void,
+    handler: (msg: MessageReactionUpdated) => void,
   ) {
     this.bot.on("message_reaction", handler);
   }
