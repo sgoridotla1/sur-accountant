@@ -101,7 +101,10 @@ export class AccountingService {
         "Message received",
       );
 
-      if (this.allowedTopics && !this.allowedTopics.has(msg.message_thread_id!)) {
+      if (
+        this.allowedTopics &&
+        !this.allowedTopics.has(msg.message_thread_id!)
+      ) {
         return;
       }
 
@@ -193,7 +196,7 @@ export class AccountingService {
           return;
         }
 
-        if (stored) {
+        if (isApproved && stored) {
           await this.writeTransactions(stored.data.transactions);
           await this.bot.replyToMessage(
             msg.chat.id,
