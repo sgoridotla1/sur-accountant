@@ -9,7 +9,7 @@
   "scripts": {
     "start": "ts-node ./src/main.ts",
     "build": "NODE_ENV=production tsc",
-    "dev": "nodemon",
+    "dev": "LOG_LEVEL=debug nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
