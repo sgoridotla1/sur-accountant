@@ -184,8 +184,9 @@ export class AccountingService {
         const threadOpts = { message_thread_id: stored?.threadId };
 
         if (isRejected) {
-          await this.bot.sendMessage(
+          await this.bot.replyToMessage(
             msg.chat.id,
+            msg.message_id,
             prettyOnRejected(),
             threadOpts,
           );
@@ -194,8 +195,9 @@ export class AccountingService {
 
         if (stored) {
           await this.writeTransactions(stored.data.transactions);
-          await this.bot.sendMessage(
+          await this.bot.replyToMessage(
             msg.chat.id,
+            msg.message_id,
             prettyOnSaveSuccess(),
             threadOpts,
           );
