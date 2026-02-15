@@ -31,13 +31,7 @@ export function prettifyTransactions(data: TAccountingResponse): string {
     return `${tx.date}  ${amount}   ${category}`;
   });
 
-  return [
-    "```",
-    ...lines,
-    "```",
-    "",
-    "👍/❤️ — зберегти | 👎/💩 — відхилити",
-  ].join("\n");
+  return [...lines, "", "👍/❤️ — зберегти | 👎/💩 — відхилити"].join("\n");
 }
 
 export const APPROVE_REACTIONS = new Set(["👍", "\u2764", "\u2764\uFE0F"]);
