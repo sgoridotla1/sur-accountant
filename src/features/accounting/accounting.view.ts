@@ -43,7 +43,3 @@ export function prettifyTransactions(data: TAccountingResponse): string {
 export const APPROVE_REACTIONS = new Set(["👍", "\u2764", "\u2764\uFE0F"]);
 export const REJECT_REACTIONS = new Set(["👎", "💩"]);
 
-export const prettyOnSaveSuccess = () => "🙂 Збережено!";
-export const prettyOnSaveFailure = () =>
-  "😩 Упс, не сьогодні... Щось пішло не так\ncc @sgdtl";
-export const prettyOnRejected = () => "😓 Відхилено";

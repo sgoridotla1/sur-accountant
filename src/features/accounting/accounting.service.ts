@@ -13,9 +13,6 @@ import {
 } from "./accounting.schema";
 import {
   prettifyTransactions,
-  prettyOnRejected,
-  prettyOnSaveFailure,
-  prettyOnSaveSuccess,
   APPROVE_REACTIONS,
   REJECT_REACTIONS,
 } from "./accounting.view";
@@ -33,6 +30,7 @@ import { mayContainTransaction } from "./accounting.utils";
 type TStoredMessage = {
   data: TAccountingResponse;
   threadId?: number;
+  originalMessageId: number;
 };
 
 type TTableConfig = {
@@ -149,6 +147,7 @@ export class AccountingService {
           this.storage.set(replyMessage.message_id, {
             data: parseResult,
             threadId: msg.message_thread_id,
+            originalMessageId: msg.message_id,
           });
       } catch (err) {
         this.logger.error(
@@ -172,6 +171,8 @@ export class AccountingService {
           "Stored message lookup",
         );
 
+        if (!stored) return;
+
         const emoji =
           msg.new_reaction[0]?.type === "emoji"
             ? msg.new_reaction[0].emoji
@@ -184,25 +185,23 @@ export class AccountingService {
 
         if (!isApproved && !isRejected) return;
 
-        const threadOpts = { message_thread_id: stored?.threadId };
+        await this.bot.deleteMessage(msg.chat.id, msg.message_id);
 
         if (isRejected) {
-          await this.bot.replyToMessage(
+          await this.bot.setReaction(
             msg.chat.id,
-            msg.message_id,
-            prettyOnRejected(),
-            threadOpts,
+            stored.originalMessageId,
+            "👎",
           );
           return;
         }
 
-        if (isApproved && stored) {
+        if (isApproved) {
           await this.writeTransactions(stored.data.transactions);
-          await this.bot.replyToMessage(
+          await this.bot.setReaction(
             msg.chat.id,
-            msg.message_id,
-            prettyOnSaveSuccess(),
-            threadOpts,
+            stored.originalMessageId,
+            "👍",
           );
           this.logger.info(
             { messageId: msg.message_id },
@@ -214,8 +213,7 @@ export class AccountingService {
           { messageId: msg.message_id, err },
           "Failed to handle reaction",
         );
-
-        await this.bot.sendMessage(msg.chat.id, prettyOnSaveFailure());
+        await this.bot.sendMessage(msg.chat.id, "😩 Упс, не сьогодні... Щось пішло не так\ncc @sgdtl");
       }
     });
   }

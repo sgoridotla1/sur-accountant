@@ -82,6 +82,27 @@ class TelegramClient {
 
     return message;
   }
+
+  async deleteMessage(
+    chatId: TelegramBotApi.ChatId,
+    messageId: number,
+  ): Promise<void> {
+    await this.bot.deleteMessage(chatId, messageId);
+  }
+
+  async setReaction(
+    chatId: TelegramBotApi.ChatId,
+    messageId: number,
+    emoji: string,
+  ): Promise<void> {
+    await (this.bot as any)._request("setMessageReaction", {
+      form: {
+        chat_id: chatId,
+        message_id: messageId,
+        reaction: JSON.stringify([{ type: "emoji", emoji }]),
+      },
+    });
+  }
 }
 
 export default TelegramClient;
