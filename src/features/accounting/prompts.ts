@@ -132,23 +132,6 @@ DO NOT extract line items, VAT, subtotals, or payment details.
   return: { "transactions": [] }
 - Do NOT hallucinate or invent transactions from non-receipt images
   (photos, memes, screenshots, documents, etc.).
-
-──────────────── OUTPUT ────────────────
-Return STRICT JSON ONLY (no markdown, no extra text):
-
-{
-  "transactions": [
-    {
-      "date": "YYYY-MM-DD",
-      "type": "income" | "expense",
-      "category": "string",
-      "amount": number
-    }
-  ]
-}
-
-- If no valid transactions are found, return: { "transactions": [] }
-
 `;
 
 export const textParsePrompt = (options: TPromptOptions) => `
@@ -208,23 +191,4 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
 - Ignore empty lines, emojis, separators, and comments.
 - Ignore lines that do NOT contain a numeric amount.
 - Do NOT invent or merge transactions.
-
-──────────────── OUTPUT ────────────────
-Return STRICT JSON ONLY (no markdown, no extra text):
-
-{
-  "transactions": [
-    {
-      "date": "YYYY-MM-DD",
-      "type": "income" | "expense",
-      "category": "string",
-      "amount": number
-    }
-  ]
-}
-
-- The output must strictly match the schema.
-- If no valid transactions are found, return:
-  { "transactions": [] }
-
     `;
