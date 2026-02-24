@@ -1,5 +1,10 @@
 import { TAccountingResponse, TTransaction } from "./accounting.schema";
 
+function formatDate(isoDate: string): string {
+  const [, month, day] = isoDate.split("-");
+  return `${day}.${month}`;
+}
+
 function formatAmount(amount: number): string {
   return amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
@@ -28,13 +33,11 @@ export function prettifyTransactions(data: TAccountingResponse): string {
   const lines = txs.map((tx, i) => {
     const amount = padStart(amounts[i], maxAmountLen);
     const category = padEnd(tx.category, maxCategoryLen);
-    return `${tx.date}  ${amount}   ${category}`;
+    return `${formatDate(tx.date)}  ${amount}   ${category}`;
   });
 
   return [
-    "```",
     ...lines,
-    "```",
     "",
     "👍/❤️ — зберегти | 👎/💩 — відхилити",
   ].join("\n");
