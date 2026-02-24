@@ -1,64 +1,53 @@
-import express from "express";
-
-import "dotenv/config";
 import z from "zod";
+
+import { config } from "./config";
 
 import TelegramClient from "./clients/telegram";
 import Agent from "./clients/agent";
 import GoogleSheetsClient from "./clients/google-sheets";
 
-import { AccountingService, accountingResponseSchema } from "./features/accounting";
+import {
+  AccountingService,
+  accountingResponseSchema,
+} from "./features/accounting";
 import { noiseDetectionPrompt } from "./features/accounting/prompts";
 import { logger } from "./utils/logger";
 
-const app = express();
-const port = 3000;
-
 async function main() {
-  const bot = new TelegramClient(process.env.TELEGRAM_BOT_TOKEN as string);
+  const bot = new TelegramClient(config.TELEGRAM_BOT_TOKEN);
   const agent = new Agent({
-    apiKey: process.env.GPT_API_KEY as string,
-    modelId: process.env.GPT_MODEL_PARSE ?? "gpt-5.2",
+    apiKey: config.GPT_API_KEY,
+    modelId: config.GPT_MODEL_PARSE,
     schema: accountingResponseSchema,
   });
 
   const noiseAgent = new Agent({
-    apiKey: process.env.GPT_API_KEY as string,
-    modelId: process.env.GPT_MODEL_NOISE ?? "gpt-5.2",
+    apiKey: config.GPT_API_KEY,
+    modelId: config.GPT_MODEL_NOISE,
     schema: z.object({ isNoise: z.boolean() }),
     temperature: 1,
     systemPrompt: noiseDetectionPrompt,
   });
 
-  const sheets = await GoogleSheetsClient.init(
-    process.env.PATH_TO_GOOGLE_KEYFILE as string,
-  );
-
-  const allowedTopics = process.env.ALLOWED_TOPIC_IDS
-    ?.split(",")
-    .map(Number)
-    .filter(Boolean);
+  const sheets = await GoogleSheetsClient.init(config.PATH_TO_GOOGLE_KEYFILE);
 
   const accountingService = new AccountingService({
     bot,
     agent,
     noiseAgent,
     sheets,
-    sheetId: process.env.GOOGLE_SHEET_ID as string,
+    sheetId: config.GOOGLE_SHEET_ID,
     tables: {
-      income: process.env.SHEET_TABLE_INCOME as string,
-      expense: process.env.SHEET_TABLE_EXPENSE as string,
+      income: config.SHEET_TABLE_INCOME,
+      expense: config.SHEET_TABLE_EXPENSE,
     },
-    allowedTopics,
+    allowedTopics: config.ALLOWED_TOPIC_IDS,
   });
 
   accountingService.run();
-
-  app.listen(port, "0.0.0.0", () => {
-    logger.info({ port }, "Server started");
-  });
 }
 
 main().catch((err) => {
-  throw new Error(err);
+  logger.fatal(err);
+  process.exit(1);
 });
