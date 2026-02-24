@@ -19,6 +19,7 @@ import {
 import {
   imageParserPrompt,
   textParsePrompt,
+  noiseDetectionPrompt,
   buildFewShotMessages,
   textExamples,
   imageExamples,
@@ -40,12 +41,15 @@ type TTableConfig = {
 
 type TAccountingServiceConfig = {
   bot: TelegramClient;
-  agent: Agent<typeof accountingResponseSchema>;
-  noiseAgent: Agent<z.ZodObject<{ isNoise: z.ZodBoolean }>>;
   sheets: GoogleSheetsClient;
   sheetId: string;
   tables: TTableConfig;
   allowedTopics?: number[];
+  gpt: {
+    apiKey: string;
+    parseModel: string;
+    noiseModel: string;
+  };
 };
 
 export class AccountingService {
@@ -62,14 +66,26 @@ export class AccountingService {
 
   constructor(config: TAccountingServiceConfig) {
     this.bot = config.bot;
-    this.agent = config.agent;
-    this.noiseAgent = config.noiseAgent;
     this.sheets = config.sheets;
     this.sheetId = config.sheetId;
     this.tables = config.tables;
     this.allowedTopics = config.allowedTopics?.length
       ? new Set(config.allowedTopics)
       : null;
+
+    this.agent = new Agent({
+      apiKey: config.gpt.apiKey,
+      modelId: config.gpt.parseModel,
+      schema: accountingResponseSchema,
+    });
+
+    this.noiseAgent = new Agent({
+      apiKey: config.gpt.apiKey,
+      modelId: config.gpt.noiseModel,
+      schema: z.object({ isNoise: z.boolean() }),
+      temperature: 1,
+      systemPrompt: noiseDetectionPrompt,
+    });
 
     const noiseFilter = RunnableLambda.from(async (text: string) => {
       if (!mayContainTransaction(text)) {
