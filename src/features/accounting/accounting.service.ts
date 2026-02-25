@@ -156,7 +156,7 @@ export class AccountingService {
           msg.chat.id,
           msg.message_id,
           replyText,
-          { message_thread_id: msg.message_thread_id },
+          { message_thread_id: msg.message_thread_id, parse_mode: "HTML" },
         );
 
         if (parseResult)

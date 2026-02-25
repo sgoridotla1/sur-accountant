@@ -30,14 +30,28 @@ export function prettifyTransactions(data: TAccountingResponse): string {
   const maxAmountLen = Math.max(...amounts.map((a) => [...a].length));
   const maxCategoryLen = Math.max(...txs.map((tx) => [...tx.category].length));
 
-  const lines = txs.map((tx, i) => {
-    const amount = padStart(amounts[i], maxAmountLen);
-    const category = padEnd(tx.category, maxCategoryLen);
-    return `${formatDate(tx.date)}  ${amount}   ${category}`;
+  // Group transactions by date, preserving first-occurrence order
+  const grouped = new Map<string, number[]>();
+  txs.forEach((tx, i) => {
+    const indices = grouped.get(tx.date);
+    if (indices) {
+      indices.push(i);
+    } else {
+      grouped.set(tx.date, [i]);
+    }
+  });
+
+  const groups = [...grouped.entries()].map(([date, indices]) => {
+    const lines = indices.map((i) => {
+      const amount = padEnd(amounts[i], maxAmountLen);
+      const category = txs[i].category;
+      return `${amount}   ${category}`;
+    });
+    return [`<b>${formatDate(date)}</b>`, "—", ...lines].join("\n");
   });
 
   return [
-    ...lines,
+    groups.join("\n\n"),
     "",
     "👍/❤️ — зберегти | 👎/💩 — відхилити",
   ].join("\n");
