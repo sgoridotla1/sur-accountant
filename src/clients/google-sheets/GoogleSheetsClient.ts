@@ -5,18 +5,13 @@ import path from "path";
 class GoogleSheetsClient {
   private sheets: sheets_v4.Sheets;
 
-  private constructor(sheets: sheets_v4.Sheets) {
-    this.sheets = sheets;
-  }
-
-  static async init(pathToKeyfile: string): Promise<GoogleSheetsClient> {
+  constructor(pathToKeyfile: string) {
     const auth = new google.auth.GoogleAuth({
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
       keyFile: path.join(process.cwd(), pathToKeyfile),
     });
 
-    const sheets = google.sheets({ version: "v4", auth });
-    return new GoogleSheetsClient(sheets);
+    this.sheets = google.sheets({ version: "v4", auth });
   }
 
   async read(spreadsheetId: string, range: string) {

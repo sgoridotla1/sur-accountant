@@ -8,7 +8,7 @@ import { logger } from "./utils/logger";
 
 async function main() {
   const bot = new TelegramClient(config.TELEGRAM_BOT_TOKEN);
-  const sheets = await GoogleSheetsClient.init(config.PATH_TO_GOOGLE_KEYFILE);
+  const sheets = new GoogleSheetsClient(config.PATH_TO_GOOGLE_KEYFILE);
 
   const accountingService = new AccountingService({
     bot,
