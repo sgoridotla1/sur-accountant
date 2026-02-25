@@ -170,7 +170,7 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
   "Витрати:", "Витрата:", "Expenses:"
   then type = "expense" for all following lines until the section ends.
 - Also treat lines containing keywords as:
-  - income: "дохід", "income", "картка", "готівка", "приват", "моно", "віддав", "віддала", "повернув", "повернула"
+  - income: "дохід", "income", "картка", "готівка", "приват", "моно", "віддав", "віддала", "повернув", "повернула", "дав", "дала", "на чай"
   - expense: "витрата", "витрати", "expense"
 
 ──────────────── CATEGORY RULES ────────────────
