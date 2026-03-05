@@ -14,10 +14,6 @@ export type TExample = {
   };
 };
 
-type TPromptOptions = {
-  date: string;
-};
-
 function loadExamples(filename: string): TExample[] {
   const filePath = path.join(process.cwd(), "data", filename);
   if (!fs.existsSync(filePath)) return [];
@@ -70,7 +66,7 @@ RULES:
 - Phone numbers, addresses, dates, times, order IDs, quantities, and ratings are NOT transactions
 - When uncertain, lean towards isNoise = false (let the parser decide)`;
 
-export const imageParserPrompt = (options: TPromptOptions) => `
+export const imageParserPrompt = () => `
 You are an OCR extraction engine for Ukrainian receipts.
 
 TASK:
@@ -88,7 +84,7 @@ DO NOT extract line items, VAT, subtotals, or payment details.
 - If time is present, ignore it.
 - If year is missing, assume the current year.
 - Output date in ISO format: YYYY-MM-DD.
-- If NO date is found anywhere in the message, use today's date: ${options.date}.
+- If NO date is found anywhere in the message, call the 'get_today_date' tool to get today's date.
 
 ──────────────── TOTAL RULES ────────────────
 - Extract ONLY the GRAND TOTAL (final payable amount).
@@ -134,7 +130,7 @@ DO NOT extract line items, VAT, subtotals, or payment details.
   (photos, memes, screenshots, documents, etc.).
 `;
 
-export const textParsePrompt = (options: TPromptOptions) => `
+export const textParsePrompt = () => `
 You are a text extraction engine for short Ukrainian accounting messages written by employees.
 
 TASK:
@@ -154,7 +150,7 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
   for all following transactions until another date appears.
 - If a date does NOT include a year, assume the current year.
 - Output all dates in ISO format: YYYY-MM-DD.
-- If NO date is found anywhere in the message, use today's date: ${options.date}.
+- If NO date is found anywhere in the message, call the 'get_today_date' tool to get today's date.
 
 ──────────────── TRANSACTION RULES ────────────────
 - Each transaction must be extracted from a line that contains a number.
@@ -185,6 +181,7 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
   - expense → "expense"
 - If contains words like  "Гот" or "готівка", put "Готівка" "картка",  "приват", "моно" put "Картка"
 - If contains words like Сільпо, okwine, оквайн, новус, novus, тс, тс+ put "Закупка"
+- If contains words like "на чай", "чайові", "дав", "дала", "віддав", "віддала", "повернув", "повернула" put "Каса"
 - If unsure about category put "Інше" (other)
 
 ──────────────── NOISE HANDLING ────────────────

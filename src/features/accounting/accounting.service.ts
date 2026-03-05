@@ -24,7 +24,7 @@ import {
   textExamples,
   imageExamples,
 } from "./prompts";
-import { today } from "../../utils/time";
+import { getTodayDate } from "../../utils/time";
 import { logger } from "../../utils/logger";
 import { mayContainTransaction } from "./accounting.utils";
 
@@ -77,6 +77,7 @@ export class AccountingService {
       apiKey: config.gpt.apiKey,
       modelId: config.gpt.parseModel,
       schema: accountingResponseSchema,
+      tools: [getTodayDate],
     });
 
     this.noiseAgent = new Agent({
@@ -246,7 +247,7 @@ export class AccountingService {
 
     const ocrResult = await this.agent.invoke({
       messages: [
-        new SystemMessage(imageParserPrompt({ date: today() })),
+        new SystemMessage(imageParserPrompt()),
         ...buildFewShotMessages(imageExamples),
         new HumanMessage("Parse data from this image"),
         new HumanMessage({
@@ -268,7 +269,7 @@ export class AccountingService {
   private async parseText({ message }: { message: string }) {
     const textResult = await this.agent.invoke({
       messages: [
-        new SystemMessage(textParsePrompt({ date: today() })),
+        new SystemMessage(textParsePrompt()),
         ...buildFewShotMessages(textExamples),
         new HumanMessage(message),
       ],

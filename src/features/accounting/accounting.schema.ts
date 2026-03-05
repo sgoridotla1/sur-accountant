@@ -12,6 +12,7 @@ const expenseTransactionSchema = z.object({
     "Інше",
     "Картка",
     "Готівка",
+    "Каса",
   ]),
   amount: z.number(),
 });
