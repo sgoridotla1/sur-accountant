@@ -14,10 +14,6 @@ export type TExample = {
   };
 };
 
-type TPromptOptions = {
-  date: string;
-};
-
 function loadExamples(filename: string): TExample[] {
   const filePath = path.join(process.cwd(), "data", filename);
   if (!fs.existsSync(filePath)) return [];
@@ -70,7 +66,7 @@ RULES:
 - Phone numbers, addresses, dates, times, order IDs, quantities, and ratings are NOT transactions
 - When uncertain, lean towards isNoise = false (let the parser decide)`;
 
-export const imageParserPrompt = (options: TPromptOptions) => `
+export const imageParserPrompt = () => `
 You are an OCR extraction engine for Ukrainian receipts.
 
 TASK:
@@ -88,7 +84,8 @@ DO NOT extract line items, VAT, subtotals, or payment details.
 - If time is present, ignore it.
 - If year is missing, assume the current year.
 - Output date in ISO format: YYYY-MM-DD.
-- If NO date is found anywhere in the message, use today's date: ${options.date}.
+- CRITICAL: If NO date is found anywhere in the message, you MUST call the 'get_today_date' tool.
+  Never guess or reuse a date from a previous example. The few-shot example dates are placeholders only.
 
 ──────────────── TOTAL RULES ────────────────
 - Extract ONLY the GRAND TOTAL (final payable amount).
@@ -119,12 +116,18 @@ DO NOT extract line items, VAT, subtotals, or payment details.
 ──────────────── CATEGORY RULES ────────────────
 - Determine category from the merchant/store name visible on the receipt.
 - Use EXACTLY one of these values:
-  - "Закупка"    — groceries, food, supplies (Сільпо, Novus, okwine, ТС, ТС+, АТБ, Фора, etc.)
-  - "Таксі"      — taxi, ride services (Uber, Bolt, Uklon, etc.)
-  - "Обладнання" — equipment, tools, hardware (Епіцентр, Comfy, etc.)
+  - "Закупка"    — any physical product: groceries, food, drinks, household items, raw materials,
+                   packaging. If the receipt shows a physical item being purchased and it doesn't
+                   clearly fall into Обладнання, use "Закупка".
+                   Known grocery stores: Сільпо, Novus/Новус, okwine/оквайн, ТС, ТС+, АТБ, Фора,
+                   Metro/Метро, Billa/Білла, Варус, Ашан/Auchan, Велика Кишеня, Таврія В, Рукавичка, Фуршет.
+  - "Таксі"      — taxi, ride services: Uber/Убер, Bolt/Болт, Uklon/Уклон.
+  - "Обладнання" — durable equipment, tools, electronics: Епіцентр, Comfy, Rozetka/Розетка, Leroy Merlin;
+                   items like ноутбук, принтер, дриль, інструмент.
   - "Зарплата"   — salary, wages, payroll
   - "Прибирання" — cleaning services
-  - "Інше"       — anything that doesn't fit above
+  - "Інше"       — use ONLY for services with no physical product: rent/оренда, repairs/ремонт, subscriptions.
+                   When in doubt between "Закупка" and "Інше", choose "Закупка".
 - Default type is "expense".
 
 ──────────────── NON-RECEIPT IMAGES ────────────────
@@ -132,26 +135,9 @@ DO NOT extract line items, VAT, subtotals, or payment details.
   return: { "transactions": [] }
 - Do NOT hallucinate or invent transactions from non-receipt images
   (photos, memes, screenshots, documents, etc.).
-
-──────────────── OUTPUT ────────────────
-Return STRICT JSON ONLY (no markdown, no extra text):
-
-{
-  "transactions": [
-    {
-      "date": "YYYY-MM-DD",
-      "type": "income" | "expense",
-      "category": "string",
-      "amount": number
-    }
-  ]
-}
-
-- If no valid transactions are found, return: { "transactions": [] }
-
 `;
 
-export const textParsePrompt = (options: TPromptOptions) => `
+export const textParsePrompt = () => `
 You are a text extraction engine for short Ukrainian accounting messages written by employees.
 
 TASK:
@@ -171,7 +157,8 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
   for all following transactions until another date appears.
 - If a date does NOT include a year, assume the current year.
 - Output all dates in ISO format: YYYY-MM-DD.
-- If NO date is found anywhere in the message, use today's date: ${options.date}.
+- CRITICAL: If NO date is found anywhere in the message, you MUST call the 'get_today_date' tool.
+  Never guess or reuse a date from a previous example. The few-shot example dates are placeholders only.
 
 ──────────────── TRANSACTION RULES ────────────────
 - Each transaction must be extracted from a line that contains a number.
@@ -187,7 +174,7 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
   "Витрати:", "Витрата:", "Expenses:"
   then type = "expense" for all following lines until the section ends.
 - Also treat lines containing keywords as:
-  - income: "дохід", "income", "картка", "готівка", "приват", "моно"
+  - income: "дохід", "income", "картка", "готівка", "приват", "моно", "віддав", "віддала", "повернув", "повернула", "дав", "дала", "на чай"
   - expense: "витрата", "витрати", "expense"
 
 ──────────────── CATEGORY RULES ────────────────
@@ -200,31 +187,24 @@ DO NOT infer VAT, subtotals, balances, or totals unless explicitly written as a 
 - If category becomes empty:
   - income → "income"
   - expense → "expense"
-- If contains words like  "Гот" or "готівка", put "Готівка" "картка",  "приват", "моно" put "Картка"
-- If contains words like Сільпо, okwine, оквайн, новус, novus, тс, тс+ put "Закупка"
-- If unsure about category put "Інше" (other)
+- If contains words like "Гот" or "готівка" → "Готівка"; "картка", "приват", "моно" → "Картка"
+- If contains words like "на чай", "чайові", "дав", "дала", "віддав", "віддала", "повернув", "повернула" → "Каса"
+- If it is a taxi/ride service (убер, uber, bolt, болт, uklon, уклон, таксі, поїздка) → "Таксі"
+- If it is durable equipment or electronics (ноутбук, принтер, техніка, інвентар, дриль, інструмент,
+  або магазин типу епіцентр, comfy, rozetka, розетка, leroy) → "Обладнання"
+- If it is a service with no physical product (оренда, ремонт, підписка, послуга) → "Інше"
+
+IMPORTANT — default for physical goods:
+  Any word that names a PHYSICAL PRODUCT or FOOD ITEM — even if you don't recognize the specific word —
+  should be classified as "Закупка". This includes groceries, ingredients, drinks, household items,
+  packaging materials, raw materials, and anything you can physically buy in a store or market.
+  Examples: лід, борошно, цукор, пляшка, серветки, вода, сіль, олія, м'ясо, овочі, фрукти, etc.
+  Known grocery stores also map to "Закупка": Сільпо, Novus/Новус, okwine/оквайн, ТС, ТС+, АТБ,
+  Фора, Metro/Метро, Billa/Білла, Варус, Ашан/Auchan, Велика Кишеня, Таврія В, Рукавичка, Фуршет.
+  When in doubt between "Закупка" and "Інше" for an expense, choose "Закупка".
 
 ──────────────── NOISE HANDLING ────────────────
 - Ignore empty lines, emojis, separators, and comments.
 - Ignore lines that do NOT contain a numeric amount.
 - Do NOT invent or merge transactions.
-
-──────────────── OUTPUT ────────────────
-Return STRICT JSON ONLY (no markdown, no extra text):
-
-{
-  "transactions": [
-    {
-      "date": "YYYY-MM-DD",
-      "type": "income" | "expense",
-      "category": "string",
-      "amount": number
-    }
-  ]
-}
-
-- The output must strictly match the schema.
-- If no valid transactions are found, return:
-  { "transactions": [] }
-
     `;

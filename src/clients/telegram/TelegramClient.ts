@@ -61,11 +61,12 @@ class TelegramClient {
     chatId: TelegramBotApi.ChatId,
     messageId: number,
     text: string,
-    options?: { message_thread_id?: number },
+    options?: { message_thread_id?: number; parse_mode?: TelegramBotApi.ParseMode },
   ): Promise<TelegramBotApi.Message> {
     const message = await this.bot.sendMessage(chatId, text, {
       reply_to_message_id: messageId,
       message_thread_id: options?.message_thread_id,
+      parse_mode: options?.parse_mode,
     });
 
     return message;
@@ -81,6 +82,27 @@ class TelegramClient {
     });
 
     return message;
+  }
+
+  async deleteMessage(
+    chatId: TelegramBotApi.ChatId,
+    messageId: number,
+  ): Promise<void> {
+    await this.bot.deleteMessage(chatId, messageId);
+  }
+
+  async setReaction(
+    chatId: TelegramBotApi.ChatId,
+    messageId: number,
+    emoji: string,
+  ): Promise<void> {
+    await (this.bot as any)._request("setMessageReaction", {
+      form: {
+        chat_id: chatId,
+        message_id: messageId,
+        reaction: JSON.stringify([{ type: "emoji", emoji }]),
+      },
+    });
   }
 }
 

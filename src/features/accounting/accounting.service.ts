@@ -13,26 +13,25 @@ import {
 } from "./accounting.schema";
 import {
   prettifyTransactions,
-  prettyOnRejected,
-  prettyOnSaveFailure,
-  prettyOnSaveSuccess,
   APPROVE_REACTIONS,
   REJECT_REACTIONS,
 } from "./accounting.view";
 import {
   imageParserPrompt,
   textParsePrompt,
+  noiseDetectionPrompt,
   buildFewShotMessages,
   textExamples,
   imageExamples,
 } from "./prompts";
-import { today } from "../../utils/time";
+import { getTodayDate } from "../../utils/time";
 import { logger } from "../../utils/logger";
 import { mayContainTransaction } from "./accounting.utils";
 
 type TStoredMessage = {
   data: TAccountingResponse;
   threadId?: number;
+  originalMessageId: number;
 };
 
 type TTableConfig = {
@@ -42,12 +41,15 @@ type TTableConfig = {
 
 type TAccountingServiceConfig = {
   bot: TelegramClient;
-  agent: Agent<typeof accountingResponseSchema>;
-  noiseAgent: Agent<z.ZodObject<{ isNoise: z.ZodBoolean }>>;
   sheets: GoogleSheetsClient;
   sheetId: string;
   tables: TTableConfig;
   allowedTopics?: number[];
+  gpt: {
+    apiKey: string;
+    parseModel: string;
+    noiseModel: string;
+  };
 };
 
 export class AccountingService {
@@ -64,14 +66,27 @@ export class AccountingService {
 
   constructor(config: TAccountingServiceConfig) {
     this.bot = config.bot;
-    this.agent = config.agent;
-    this.noiseAgent = config.noiseAgent;
     this.sheets = config.sheets;
     this.sheetId = config.sheetId;
     this.tables = config.tables;
     this.allowedTopics = config.allowedTopics?.length
       ? new Set(config.allowedTopics)
       : null;
+
+    this.agent = new Agent({
+      apiKey: config.gpt.apiKey,
+      modelId: config.gpt.parseModel,
+      schema: accountingResponseSchema,
+      tools: [getTodayDate],
+    });
+
+    this.noiseAgent = new Agent({
+      apiKey: config.gpt.apiKey,
+      modelId: config.gpt.noiseModel,
+      schema: z.object({ isNoise: z.boolean() }),
+      temperature: 1,
+      systemPrompt: noiseDetectionPrompt,
+    });
 
     const noiseFilter = RunnableLambda.from(async (text: string) => {
       if (!mayContainTransaction(text)) {
@@ -142,13 +157,14 @@ export class AccountingService {
           msg.chat.id,
           msg.message_id,
           replyText,
-          { message_thread_id: msg.message_thread_id },
+          { message_thread_id: msg.message_thread_id, parse_mode: "HTML" },
         );
 
         if (parseResult)
           this.storage.set(replyMessage.message_id, {
             data: parseResult,
             threadId: msg.message_thread_id,
+            originalMessageId: msg.message_id,
           });
       } catch (err) {
         this.logger.error(
@@ -172,6 +188,8 @@ export class AccountingService {
           "Stored message lookup",
         );
 
+        if (!stored) return;
+
         const emoji =
           msg.new_reaction[0]?.type === "emoji"
             ? msg.new_reaction[0].emoji
@@ -184,25 +202,23 @@ export class AccountingService {
 
         if (!isApproved && !isRejected) return;
 
-        const threadOpts = { message_thread_id: stored?.threadId };
+        await this.bot.deleteMessage(msg.chat.id, msg.message_id);
 
         if (isRejected) {
-          await this.bot.replyToMessage(
+          await this.bot.setReaction(
             msg.chat.id,
-            msg.message_id,
-            prettyOnRejected(),
-            threadOpts,
+            stored.originalMessageId,
+            "👎",
           );
           return;
         }
 
-        if (isApproved && stored) {
+        if (isApproved) {
           await this.writeTransactions(stored.data.transactions);
-          await this.bot.replyToMessage(
+          await this.bot.setReaction(
             msg.chat.id,
-            msg.message_id,
-            prettyOnSaveSuccess(),
-            threadOpts,
+            stored.originalMessageId,
+            "👍",
           );
           this.logger.info(
             { messageId: msg.message_id },
@@ -214,8 +230,7 @@ export class AccountingService {
           { messageId: msg.message_id, err },
           "Failed to handle reaction",
         );
-
-        await this.bot.sendMessage(msg.chat.id, prettyOnSaveFailure());
+        await this.bot.sendMessage(msg.chat.id, "😩 Упс, не сьогодні... Щось пішло не так\ncc @sgdtl");
       }
     });
   }
@@ -232,7 +247,7 @@ export class AccountingService {
 
     const ocrResult = await this.agent.invoke({
       messages: [
-        new SystemMessage(imageParserPrompt({ date: today() })),
+        new SystemMessage(imageParserPrompt()),
         ...buildFewShotMessages(imageExamples),
         new HumanMessage("Parse data from this image"),
         new HumanMessage({
@@ -254,7 +269,7 @@ export class AccountingService {
   private async parseText({ message }: { message: string }) {
     const textResult = await this.agent.invoke({
       messages: [
-        new SystemMessage(textParsePrompt({ date: today() })),
+        new SystemMessage(textParsePrompt()),
         ...buildFewShotMessages(textExamples),
         new HumanMessage(message),
       ],

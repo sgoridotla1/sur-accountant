@@ -1,5 +1,10 @@
 import { TAccountingResponse, TTransaction } from "./accounting.schema";
 
+function formatDate(isoDate: string): string {
+  const [, month, day] = isoDate.split("-");
+  return `${day}.${month}`;
+}
+
 function formatAmount(amount: number): string {
   return amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
@@ -25,19 +30,30 @@ export function prettifyTransactions(data: TAccountingResponse): string {
   const maxAmountLen = Math.max(...amounts.map((a) => [...a].length));
   const maxCategoryLen = Math.max(...txs.map((tx) => [...tx.category].length));
 
-  const lines = txs.map((tx, i) => {
-    const amount = padStart(amounts[i], maxAmountLen);
-    const category = padEnd(tx.category, maxCategoryLen);
-    return `${tx.date}  ${amount}   ${category}`;
+  // Group transactions by date, preserving first-occurrence order
+  const grouped = new Map<string, number[]>();
+  txs.forEach((tx, i) => {
+    const indices = grouped.get(tx.date);
+    if (indices) {
+      indices.push(i);
+    } else {
+      grouped.set(tx.date, [i]);
+    }
   });
 
-  return [...lines, "", "👍/❤️ — зберегти | 👎/💩 — відхилити"].join("\n");
+  const groups = [...grouped.entries()].map(([date, indices]) => {
+    const lines = indices.map((i) => {
+      const amount = padEnd(amounts[i], maxAmountLen);
+      const category = txs[i].category;
+      return `${amount}   ${category}`;
+    });
+    return [`<b>${formatDate(date)}</b>`, "—", ...lines].join("\n");
+  });
+
+  return [groups.join("\n\n"), "", "👍/❤️ — зберегти | 👎/💩 — відхилити"].join(
+    "\n",
+  );
 }
 
 export const APPROVE_REACTIONS = new Set(["👍", "\u2764", "\u2764\uFE0F"]);
 export const REJECT_REACTIONS = new Set(["👎", "💩"]);
-
-export const prettyOnSaveSuccess = () => "🙂 Збережено!";
-export const prettyOnSaveFailure = () =>
-  "😩 Упс, не сьогодні... Щось пішло не так\ncc @sgdtl";
-export const prettyOnRejected = () => "😓 Відхилено";
