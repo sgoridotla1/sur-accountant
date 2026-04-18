@@ -1,0 +1,1 @@
+#2 Config + GoogleCalendarClient — Added CALENDAR_TOPIC_ID + GOOGLE_CALENDAR_ID to config.ts; created GoogleCalendarClient (src/clients/google-calendar/) mirroring GoogleSheetsClient pattern, calendar scope, createEvent(title,date,description?) method; updated .env.example. Build passes.
