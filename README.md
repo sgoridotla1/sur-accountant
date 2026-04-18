@@ -1,6 +1,6 @@
 # Sur Accountant
 
-Telegram bot for a small business accounting. Extracts transactions from receipt photos and text messages using AI, saves to Google Sheets on emoji confirmation.
+Telegram bot for accounting, shift scheduling, and calendar event detection. Parses messages with AI, saves to Google Sheets and Google Calendar on emoji confirmation.
 
 ## Setup
 
@@ -10,28 +10,49 @@ npm install
 npm run dev
 ```
 
+### Environment variables
+
 | Variable | Description |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token |
 | `GPT_API_KEY` | OpenAI API key |
-| `GPT_MODEL_PARSE` | Model for transaction parsing (default: `gpt-5.2`) |
+| `GPT_MODEL_PARSE` | Model for parsing (default: `gpt-5.2`) |
 | `GPT_MODEL_NOISE` | Model for noise detection (default: `gpt-5.2`) |
-| `PATH_TO_GOOGLE_KEYFILE` | Path to Google service account JSON |
+| `PATH_TO_GOOGLE_KEYFILE` | Path to Google service account JSON keyfile |
 | `GOOGLE_SHEET_ID` | Target spreadsheet ID |
 | `SHEET_TABLE_INCOME` | Income sheet range (default: `Каса!A1:C`) |
 | `SHEET_TABLE_EXPENSE` | Expense sheet range (default: `Витрати!A1:C`) |
+| `ALLOWED_TOPIC_IDS` | Comma-separated topic IDs for accounting (empty = all) |
+| `SHIFT_TOPIC_ID` | Telegram topic ID for shift scheduling |
+| `SHEET_TABLE_SHIFTS` | Shifts sheet range (default: `Зміни!A1:B`) |
+| `CALENDAR_TOPIC_ID` | Telegram topic ID for calendar event detection |
+| `GOOGLE_CALENDAR_ID` | Google Calendar ID (e.g. `xxx@group.calendar.google.com`) |
 | `LOG_LEVEL` | `debug` / `info` / `warn` / `error` (default: `info`) |
-| `ALLOWED_TOPIC_IDS` | Comma-separated Telegram topic IDs to listen to (empty = all) |
 
-Google service account credentials go into `credentials/`.
+### Google service account
 
-## Debug Mode
+1. Create a service account in [Google Cloud Console](https://console.cloud.google.com) and download the JSON keyfile
+2. Enable **Google Sheets API** and **Google Calendar API** in your project
+3. Share your Google Sheet with the service account email (Editor)
+4. Share your Google Calendar with the service account email (Make changes to events)
 
-Set `LOG_LEVEL=debug` in your `.env` file to enable verbose logging (noise detection results, reaction lookups, sheet writes, etc.):
+## Running
 
 ```bash
-LOG_LEVEL=debug npm run dev
+# Development — auto-restart + debug logging
+npm run dev
+
+# Production
+npm start
 ```
+
+## Features
+
+- **Accounting** — parses income/expense messages, previews via bot reply, writes to Google Sheets on 👍/❤️
+- **Shifts** — parses shift schedules, writes to Google Sheets on 👍/❤️
+- **Calendar** — detects event mentions, sends a preview per event, creates all-day Google Calendar events on 👍/❤️
+
+All features use 👎/💩 to reject and clean up the bot reply.
 
 ## Deploy
 
