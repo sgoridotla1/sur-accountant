@@ -1,1 +1,3 @@
 #2 Config + GoogleCalendarClient — Added CALENDAR_TOPIC_ID + GOOGLE_CALENDAR_ID to config.ts; created GoogleCalendarClient (src/clients/google-calendar/) mirroring GoogleSheetsClient pattern, calendar scope, createEvent(title,date,description?) method; updated .env.example. Build passes.
+#3 Event parsing agent — calendar.schema.ts (calendarResponseSchema, events array), calendar.prompts.ts (noise filter, future-only, getTodayDate for year inference, optional description). Follows shift pattern. Build passes.
+#4 CalendarService + view + main.ts — calendar.service.ts (one reply per event, Map storage, 👍 creates event, 👎 rejects, deletes bot reply); calendar.view.ts (prettifyEvent); wired into main.ts with GoogleCalendarClient. Build passes.
