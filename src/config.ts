@@ -14,6 +14,10 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((val) => val?.split(",").map(Number).filter(Boolean)),
+  SHIFT_TOPIC_ID: z.string().transform(Number),
+  SHEET_TABLE_SHIFTS: z.string().default("Зміни!A1:B"),
+  CALENDAR_TOPIC_ID: z.string().transform(Number),
+  GOOGLE_CALENDAR_ID: z.string(),
 });
 
 export const config = envSchema.parse(process.env);
